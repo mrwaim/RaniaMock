@@ -43,6 +43,7 @@ class RaniaOrderManager implements OrderManager
         }
 
         $order->approved_at = $approved_at;
+        $order->approved_by_id = Auth::user()->id;
         $order->save();
 
         $approveId = (Auth::user() ? Auth::user()->id : 0);
@@ -66,6 +67,11 @@ class RaniaOrderManager implements OrderManager
             $order->user->account_status = 'Rejected';
             $order->user->save();
         }
+
+        $order->rejected_at = new Carbon();
+        $order->rejected_by_id = Auth::user()->id;
+        $order->save();
+
         $order->order_status_id = OrderStatus::Rejected()->id;
         $order->save();
 
