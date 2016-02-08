@@ -53,8 +53,7 @@ class RaniaBonusManager implements BonusManager
             'created_at' => $order->approved_at,
             'updated_at' => $order->updated_at,
             'workflow_status' => 'ProcessedByReceiver',
-            // Null - let them choose
-            'bonus_payout_id' => null,
+            'bonus_payout_id' => BonusPayout::IntroducerBonusPayoutCashOption()->id,
             'bonus_type_id' => BonusType::IntroducerBonus()->id,
             'awarded_by_user_id' => 2,
             'awarded_to_user_id' => $user->id,
