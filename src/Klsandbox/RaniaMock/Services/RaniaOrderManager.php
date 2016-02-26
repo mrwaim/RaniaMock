@@ -3,7 +3,7 @@
 namespace Klsandbox\RaniaMock\Services;
 
 use App;
-use App\Models\NotificationRequest;
+use Klsandbox\NotificationService\Models\NotificationRequest;
 use Klsandbox\BonusModel\Services\BonusManager;
 use Klsandbox\OrderModel\Models\Order;
 use Klsandbox\OrderModel\Models\OrderStatus;
