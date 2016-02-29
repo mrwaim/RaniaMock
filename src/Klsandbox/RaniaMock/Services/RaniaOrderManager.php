@@ -2,7 +2,7 @@
 
 namespace Klsandbox\RaniaMock\Services;
 
-use App;
+use App\Services\UserManager;
 use Klsandbox\NotificationService\Models\NotificationRequest;
 use Klsandbox\BonusModel\Services\BonusManager;
 use Klsandbox\OrderModel\Models\Order;
@@ -17,10 +17,12 @@ use Log;
 class RaniaOrderManager implements OrderManager
 {
     protected $bonusManager;
+    protected $userManager;
 
-    public function __construct(BonusManager $bonusManager)
+    public function __construct(BonusManager $bonusManager, UserManager $userManager)
     {
         $this->bonusManager = $bonusManager;
+        $this->userManager = $userManager;
     }
 
     public function approveOrder(Order $order, $approved_at = null)
@@ -32,8 +34,8 @@ class RaniaOrderManager implements OrderManager
 
         if ($order->order_status_id == OrderStatus::FirstOrder()->id) {
             Site::protect($order->user, "User");
-            $order->user->account_status = 'Approved';
-            $order->user->save();
+
+            $this->userManager->approveNewMember($order->user);
         }
 
         $order->order_status_id = OrderStatus::Approved()->id;
@@ -64,8 +66,7 @@ class RaniaOrderManager implements OrderManager
 
         if ($order->order_status_id == OrderStatus::FirstOrder()->id) {
             Site::protect($order->user, "User");
-            $order->user->account_status = 'Rejected';
-            $order->user->save();
+            $this->userManager->rejectNewMember($order->user);
         }
 
         $order->rejected_at = new Carbon();
