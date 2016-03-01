@@ -59,7 +59,7 @@ class RaniaBonusManager implements BonusManager
         ]);
 
         $bonusNote = BonusNote::create([
-            'notes' => 'IntroducerBonusCreated:' . self::class . ' function:' . 'payIntroducerBonus',
+            'notes' => 'method:' . __METHOD__,
             'bonus_id' => $bonus->id,
         ]);
 

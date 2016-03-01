@@ -86,6 +86,9 @@ class RaniaOrderManager implements OrderManager
     {
         $order->tracking_id = $trackingId;
         $order->order_status_id = OrderStatus::Shipped()->id;
+
+        $order->shipped_at = Carbon::now();
+        $order->shipped_by_id = Auth::user()->id;
         $order->save();
 
         User::createUserEvent($order->user, ['controller' => 'timeline', 'route' => '/order-shipped', 'target_id' => $order->id, 'parameter_id' => Auth::user()->id]);
