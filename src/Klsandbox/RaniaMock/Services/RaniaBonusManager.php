@@ -2,7 +2,7 @@
 
 namespace Klsandbox\RaniaMock\Services;
 
-use App;
+use Klsandbox\BonusModel\Models\BonusNote;
 use App\Models\User;
 use App\Models\Bonus;
 use Klsandbox\BonusModel\Models\BonusPayout;
@@ -11,9 +11,7 @@ use Klsandbox\BonusModel\Services\BonusCommand;
 use Klsandbox\BonusModel\Services\BonusManager;
 use Klsandbox\OrderModel\Models\Order;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
 use DateTime;
-use Log;
 
 class RaniaBonusManager implements BonusManager
 {
@@ -58,6 +56,11 @@ class RaniaBonusManager implements BonusManager
             'awarded_by_user_id' => 2,
             'awarded_to_user_id' => $user->id,
             'order_id' => $order->id,
+        ]);
+
+        $bonusNote = BonusNote::create([
+            'notes' => 'IntroducerBonusCreated:' . self::class . ' function:' . 'payIntroducerBonus',
+            'bonus_id' => $bonus->id,
         ]);
 
         //echo "BONUS_PAID " . $bonus . PHP_EOL;
