@@ -16,7 +16,14 @@ use Log;
 
 class RaniaOrderManager implements OrderManager
 {
+    /**
+     * @var BonusManager $bonusManager
+     */
     protected $bonusManager;
+
+    /**
+     * @var UserManager $userManager
+     */
     protected $userManager;
 
     public function __construct(BonusManager $bonusManager, UserManager $userManager)
@@ -103,5 +110,50 @@ class RaniaOrderManager implements OrderManager
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-downlevel-order', 'channel' => 'Sms', 'to_user_id' => $order->user->referral_id]);
 
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
+    }
+
+    function createRestockOrder($proofOfTransfer, $product_pricing_id, $paymentMode, $amount, $draft)
+    {
+        $orderModel = config('order.order_model');
+        $order = new $orderModel();
+        $order->fill(
+            [
+                'order_status_id' => $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id,
+                'product_pricing_id' => $product_pricing_id,
+                'payment_mode' => $paymentMode,
+                'proof_of_transfer_id' => $proofOfTransfer->id,
+                'price' => $amount,
+            ]);
+
+        $order->save();
+
+        return $order;
+    }
+
+    function cancelOrder($order)
+    {
+        $order->rejected_at = new Carbon();
+        $order->rejected_by_id = Auth::user()->id;
+        $order->order_status_id = OrderStatus::Rejected()->id;
+        $order->save();
+    }
+
+    function createFirstOrder($productPricingId, $proofOfTransfer, $paymentMode, $amount)
+    {
+        $orderModel = config('order.order_model');
+        return $order = $orderModel::create(
+            [
+                'order_status_id' => OrderStatus::FirstOrder()->id,
+                'product_pricing_id' => $productPricingId,
+                'proof_of_transfer_id' => $proofOfTransfer->id,
+                'payment_mode' => $paymentMode,
+                'price' => $amount,
+            ]);
+    }
+
+    function setPaymentUploaded($order)
+    {
+        $order->order_status_id = OrderStatus::PaymentUploaded()->id;
+        $order->save();
     }
 }
