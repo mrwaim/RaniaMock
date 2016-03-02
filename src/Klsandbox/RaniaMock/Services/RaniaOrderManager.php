@@ -130,7 +130,7 @@ class RaniaOrderManager implements OrderManager
         return $order;
     }
 
-    function cancelOrder($order)
+    function cancelOrder(Order $order)
     {
         $order->rejected_at = new Carbon();
         $order->rejected_by_id = Auth::user()->id;
