@@ -71,7 +71,14 @@ class RaniaOrderManager implements OrderManager
         $approveId = (Auth::user() ? Auth::user()->id : 0);
         Log::info("Order approved:$order->id by:" . $approveId);
 
-        User::createUserEvent($order->user, ['created_at' => $approved_at, 'controller' => 'timeline', 'route' => '/order-approved', 'target_id' => $order->id, 'parameter_id' => $approveId]);
+        if (Auth::user()) {
+            User::createUserEvent($order->user, ['created_at' => $approved_at, 'controller' => 'timeline', 'route' => '/order-approved', 'target_id' => $order->id, 'parameter_id' => $approveId]);
+        }
+        else
+        {
+            User::createUserEvent($order->user, ['created_at' => $approved_at, 'controller' => 'timeline', 'route' => '/order-auto-approved', 'target_id' => $order->id]);
+        }
+
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'order-approved', 'channel' => 'Sms', 'to_user_id' => $order->user->id]);
 
         $this->bonusManager->resolveBonus($order);
