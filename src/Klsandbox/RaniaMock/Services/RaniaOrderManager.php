@@ -34,8 +34,16 @@ class RaniaOrderManager implements OrderManager
 
     public function approveOrder(Order $order, $approved_at = null)
     {
-        assert(
-            $order->order_status_id == OrderStatus::NewOrderStatus()->id || $order->order_status_id == OrderStatus::FirstOrder()->id || $order->order_status_id == OrderStatus::PaymentUploaded()->id, "Invalid Order to approve $order->id - Status {$order->orderStatus->name}");
+        $allowedStatus = [
+            OrderStatus::NewOrderStatus()->id,
+            OrderStatus::FirstOrder()->id,
+            OrderStatus::PaymentUploaded()->id,
+
+            // TODO: This is for online only, consider separate end point
+            OrderStatus::Draft()->id,
+        ];
+
+        assert(in_array($order->order_status_id, $allowedStatus), "Invalid Order to approve $order->id - Status {$order->orderStatus->name}");
 
         Site::protect($order, "Order");
 
@@ -52,7 +60,12 @@ class RaniaOrderManager implements OrderManager
         }
 
         $order->approved_at = $approved_at;
-        $order->approved_by_id = Auth::user()->id;
+
+        if (Auth::user())
+        {
+            $order->approved_by_id = Auth::user()->id;
+        }
+
         $order->save();
 
         $approveId = (Auth::user() ? Auth::user()->id : 0);
