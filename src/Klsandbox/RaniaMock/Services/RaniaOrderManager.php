@@ -86,8 +86,16 @@ class RaniaOrderManager implements OrderManager
 
     public function rejectOrder(Order $order)
     {
-        assert(
-            $order->order_status_id == OrderStatus::NewOrderStatus()->id || $order->order_status_id == OrderStatus::FirstOrder()->id || $order->order_status_id == OrderStatus::PaymentUploaded()->id, "Invalid Order to approve $order->id - Status {$order->orderStatus->name}");
+        $allowedStatus = [
+            OrderStatus::NewOrderStatus()->id,
+            OrderStatus::FirstOrder()->id,
+            OrderStatus::PaymentUploaded()->id,
+
+            // TODO: This is for online only, consider separate end point
+            OrderStatus::Draft()->id,
+        ];
+
+        assert(in_array($order->order_status_id, $allowedStatus), "Invalid Order to reject $order->id - Status {$order->orderStatus->name}");
 
         Site::protect($order, "Order");
 
@@ -97,15 +105,27 @@ class RaniaOrderManager implements OrderManager
         }
 
         $order->rejected_at = new Carbon();
-        $order->rejected_by_id = Auth::user()->id;
+
+        if (Auth::user())
+        {
+            $order->rejected_by_id = Auth::user()->id;
+        }
+
         $order->save();
 
         $order->order_status_id = OrderStatus::Rejected()->id;
         $order->save();
 
-        Log::info("Order rejected:$order->id by:" . Auth::user()->id);
+        if (Auth::user()) {
+            Log::info("Order rejected:$order->id by:" . Auth::user()->id);
 
-        User::createUserEvent($order->user, ['controller' => 'timeline', 'route' => '/order-rejected', 'target_id' => $order->id, 'parameter_id' => Auth::user()->id]);
+            User::createUserEvent($order->user, ['controller' => 'timeline', 'route' => '/order-rejected', 'target_id' => $order->id, 'parameter_id' => Auth::user()->id]);
+        }
+        else {
+            Log::info("Order rejected:$order->id by:online");
+
+            User::createUserEvent($order->user, ['controller' => 'timeline', 'route' => '/order-auto-rejected', 'target_id' => $order->id]);
+        }
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'order-rejected', 'channel' => 'Sms', 'to_user_id' => $order->user->id]);
     }
 
