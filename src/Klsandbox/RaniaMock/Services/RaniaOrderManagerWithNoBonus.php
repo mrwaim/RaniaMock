@@ -187,5 +187,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
     {
         $order->order_status_id = OrderStatus::PaymentUploaded()->id;
         $order->save();
+
+        Log::info("set-payment-uploaded\t#order:$order->id user:{$order->user->id} status:{$order->orderStatus->name}");
     }
 }
