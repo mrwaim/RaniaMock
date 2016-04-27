@@ -23,6 +23,9 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
     {
         parent::approveOrder($order, $approved_at);
 
-        $this->bonusManager->resolveBonus($order);
+        foreach ($order->orderItems as $orderItem)
+        {
+            $this->bonusManager->resolveBonus($orderItem);
+        }
     }
 }

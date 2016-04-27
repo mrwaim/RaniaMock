@@ -6,6 +6,7 @@ use App\Services\UserManager;
 use Klsandbox\NotificationService\Models\NotificationRequest;
 //use Klsandbox\BonusModel\Services\BonusManager;
 use Klsandbox\OrderModel\Models\Order;
+use Klsandbox\OrderModel\Models\OrderItem;
 use Klsandbox\OrderModel\Models\OrderStatus;
 use App\Models\User;
 use Carbon\Carbon;
@@ -144,20 +145,26 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
     }
 
-    function createRestockOrder($proofOfTransfer, $product_pricing_id, $paymentMode, $amount, $draft)
+    function createRestockOrder($proofOfTransfer, $draft, $productPricingIdHash, $quantityHash)
     {
         $orderModel = config('order.order_model');
         $order = new $orderModel();
         $order->fill(
             [
                 'order_status_id' => $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id,
-                'product_pricing_id' => $product_pricing_id,
-                'payment_mode' => $paymentMode,
                 'proof_of_transfer_id' => $proofOfTransfer->id,
-                'price' => $amount,
             ]);
 
         $order->save();
+
+        foreach ($productPricingIdHash as $key => $item)
+        {
+            OrderItem::create([
+                'product_pricing_id' => \Crypt::decrypt($item),
+                'order_id' => $order->id,
+                'quantity' => $quantityHash[$key]
+            ]);
+        }
 
         return $order;
     }
@@ -170,17 +177,24 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $order->save();
     }
 
-    function createFirstOrder($productPricingId, $proofOfTransfer, $paymentMode, $amount)
+    function createFirstOrder($productPricingId, $proofOfTransfer)
     {
         $orderModel = config('order.order_model');
-        return $order = $orderModel::create(
+
+        $order = $orderModel::create(
             [
                 'order_status_id' => OrderStatus::FirstOrder()->id,
-                'product_pricing_id' => $productPricingId,
                 'proof_of_transfer_id' => $proofOfTransfer->id,
-                'payment_mode' => $paymentMode,
-                'price' => $amount,
             ]);
+
+        $orderItem = new OrderItem();
+        $orderItem->product_pricing_id = $productPricingId;
+        $orderItem->index = 0;
+        $orderItem->quantity = 1;
+        $orderItem->order_id = $order->id;
+        $orderItem->save();
+
+        return $order;
     }
 
     function setPaymentUploaded($order)
