@@ -31,6 +31,7 @@ class RaniaBonusManager implements BonusManager
         if ($orderItem->order->user->upLevel->role->name != 'admin') {
             self::payIntroducerBonus($orderItem, $orderItem->order->user->upLevel);
         }
+
         self::payIntroducerBonus($orderItem, $orderItem->order->user);
     }
 

@@ -11,6 +11,7 @@ use Klsandbox\OrderModel\Models\OrderStatus;
 use App\Models\User;
 use Carbon\Carbon;
 use Auth;
+use Klsandbox\OrderModel\Models\ProductPricing;
 use Klsandbox\OrderModel\Services\OrderManager;
 use Klsandbox\SiteModel\Site;
 use Log;
@@ -159,10 +160,13 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         foreach ($productPricingIdHash as $key => $item)
         {
+            $productPricing = ProductPricing::find(\Crypt::decrypt($item));
+
             OrderItem::create([
                 'product_pricing_id' => \Crypt::decrypt($item),
                 'order_id' => $order->id,
-                'quantity' => $quantityHash[$key]
+                'quantity' => config('order.allow_quantity') ? $quantityHash[$key] : 1,
+                'product_price' => $productPricing->product->isOtherProduct() ? $proofOfTransfer->amount : $productPricing->price,
             ]);
         }
 
