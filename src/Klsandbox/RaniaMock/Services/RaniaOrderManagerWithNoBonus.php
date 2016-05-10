@@ -164,6 +164,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         $order->save();
 
+        $index = 0;
         foreach ($productPricingIdHash as $key => $item)
         {
             $productPricing = ProductPricing::find(\Crypt::decrypt($item));
@@ -173,6 +174,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 'order_id' => $order->id,
                 'quantity' => config('order.allow_quantity') ? $quantityHash[$key] : 1,
                 'product_price' => $productPricing->product->isOtherProduct() ? $proofOfTransfer->amount : $productPricing->price,
+                'index' => $index++,
             ]);
         }
 
