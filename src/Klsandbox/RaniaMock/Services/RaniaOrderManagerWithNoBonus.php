@@ -148,11 +148,17 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
     function createRestockOrder($proofOfTransfer, $draft, $productPricingIdHash, $quantityHash)
     {
+        $status = $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id;
+        return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status);
+    }
+
+    function createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status)
+    {
         $orderModel = config('order.order_model');
         $order = new $orderModel();
         $order->fill(
             [
-                'order_status_id' => $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id,
+                'order_status_id' => $status,
                 'proof_of_transfer_id' => $proofOfTransfer->id,
             ]);
 
@@ -181,24 +187,10 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $order->save();
     }
 
-    function createFirstOrder($productPricingId, $proofOfTransfer)
+    function createFirstOrder($proofOfTransfer, $productPricingIdHash, $quantityHash)
     {
-        $orderModel = config('order.order_model');
-
-        $order = $orderModel::create(
-            [
-                'order_status_id' => OrderStatus::FirstOrder()->id,
-                'proof_of_transfer_id' => $proofOfTransfer->id,
-            ]);
-
-        $orderItem = new OrderItem();
-        $orderItem->product_pricing_id = $productPricingId;
-        $orderItem->index = 0;
-        $orderItem->quantity = 1;
-        $orderItem->order_id = $order->id;
-        $orderItem->save();
-
-        return $order;
+        $status = OrderStatus::FirstOrder()->id;
+        return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status);
     }
 
     function setPaymentUploaded($order)
