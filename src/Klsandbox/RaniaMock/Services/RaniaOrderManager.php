@@ -25,7 +25,10 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
 
         foreach ($order->orderItems as $orderItem)
         {
-            $this->bonusManager->resolveBonus($orderItem);
+            if ($orderItem->productPricing->product->bonusCategory)
+            {
+                $this->bonusManager->resolveBonus($orderItem);
+            }
         }
     }
 }
