@@ -22,10 +22,16 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
      * @var UserManager $userManager
      */
     protected $userManager;
+    protected $date;
 
     public function __construct(UserManager $userManager)
     {
         $this->userManager = $userManager;
+    }
+
+    public function setDate($date)
+    {
+        $this->date = $date;
     }
 
     public function approveOrder(Order $order, $approved_at = null)
@@ -141,7 +147,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
     }
 
     public function orderCreated(Order $order) {
-        Log::info("created\t#order:$order->id user:{$order->user->id} status:{$order->orderStatus->name}");
+        Log::info("created\t#order:$order->id user:{$order->user->id} status:{$order->orderStatus->name} created_at:{$order->created_at}");
 
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-order', 'channel' => 'Sms', 'to_user_id' => User::admin()->id]);
 
@@ -177,6 +183,11 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 'customer_id' => $customer ? $customer->id : null,
             ]);
 
+        if ($this->date)
+        {
+            $order->created_at = $this->date;
+        }
+
         $order->save();
 
         $index = 0;
@@ -189,13 +200,21 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
             $productPricing = ProductPricing::find(\Crypt::decrypt($item));
 
-            OrderItem::create([
+            $orderItem = new OrderItem();
+            $orderItem->fill([
                 'product_pricing_id' => \Crypt::decrypt($item),
                 'order_id' => $order->id,
                 'quantity' => $quantityHash[$key],
                 'product_price' => $productPricing->product->isOtherProduct() ? $proofOfTransfer->amount : $productPricing->price,
                 'index' => $index++,
             ]);
+
+            if ($this->date)
+            {
+                $orderItem->created_at = $this->date;
+            }
+
+            $orderItem->save();
         }
 
         return $order;
