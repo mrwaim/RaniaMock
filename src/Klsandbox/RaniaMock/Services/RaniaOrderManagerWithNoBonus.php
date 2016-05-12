@@ -49,7 +49,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             $this->userManager->approveNewMember($order->user);
         }
 
-        $order->order_status_id = OrderStatus::Approved()->id;
+        $order->orderStatus()->associate(OrderStatus::Approved());
 
         if (!$approved_at) {
             $approved_at = new Carbon();
@@ -76,6 +76,8 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         }
 
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'order-approved', 'channel' => 'Sms', 'to_user_id' => $order->user->id]);
+
+        return $order;
     }
 
     public function rejectOrder(Order $order)
@@ -107,7 +109,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         $order->save();
 
-        $order->order_status_id = OrderStatus::Rejected()->id;
+        $order->orderStatus()->associate(OrderStatus::Rejected());
         $order->save();
 
         if (Auth::user()) {
@@ -121,6 +123,8 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             User::createUserEvent($order->user, ['controller' => 'timeline', 'route' => '/order-auto-rejected', 'target_id' => $order->id]);
         }
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'order-rejected', 'channel' => 'Sms', 'to_user_id' => $order->user->id]);
+
+        return $order;
     }
 
     public function shipOrder(Order $order, $trackingId)
@@ -146,14 +150,24 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
     }
 
-    function createRestockOrder($proofOfTransfer, $draft, $productPricingIdHash, $quantityHash)
+    function createRestockOrder($proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash)
     {
         $status = $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id;
         return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status);
     }
 
-    function createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status)
+    function createOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status)
     {
+        if (empty($productPricingIdHash))
+        {
+            \App::abort(500, 'invalid');
+        }
+
+        if (empty($quantityHash))
+        {
+            \App::abort(500, 'invalid');
+        }
+
         $orderModel = config('order.order_model');
         $order = new $orderModel();
         $order->fill(
@@ -167,12 +181,17 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $index = 0;
         foreach ($productPricingIdHash as $key => $item)
         {
+            if (!config('order.allow_quantity') && $quantityHash[$key] != 1)
+            {
+                \App::abort(500, 'invalid');
+            }
+
             $productPricing = ProductPricing::find(\Crypt::decrypt($item));
 
             OrderItem::create([
                 'product_pricing_id' => \Crypt::decrypt($item),
                 'order_id' => $order->id,
-                'quantity' => config('order.allow_quantity') ? $quantityHash[$key] : 1,
+                'quantity' => $quantityHash[$key],
                 'product_price' => $productPricing->product->isOtherProduct() ? $proofOfTransfer->amount : $productPricing->price,
                 'index' => $index++,
             ]);
@@ -189,7 +208,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $order->save();
     }
 
-    function createFirstOrder($proofOfTransfer, $productPricingIdHash, $quantityHash)
+    function createFirstOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash)
     {
         $status = OrderStatus::FirstOrder()->id;
         return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status);

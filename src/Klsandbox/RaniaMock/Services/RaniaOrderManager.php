@@ -21,7 +21,7 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
 
     public function approveOrder(Order $order, $approved_at = null)
     {
-        parent::approveOrder($order, $approved_at);
+        $return = parent::approveOrder($order, $approved_at);
 
         foreach ($order->orderItems as $orderItem)
         {
@@ -30,5 +30,7 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
                 $this->bonusManager->resolveBonus($orderItem);
             }
         }
+
+        return $return;
     }
 }
