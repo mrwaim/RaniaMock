@@ -150,13 +150,13 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
     }
 
-    function createRestockOrder($proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash)
+    function createRestockOrder($proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $customer = null)
     {
         $status = $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id;
-        return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status);
+        return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status, $customer);
     }
 
-    function createOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status)
+    function createOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status, $customer = null)
     {
         if (empty($productPricingIdHash))
         {
@@ -174,6 +174,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             [
                 'order_status_id' => $status,
                 'proof_of_transfer_id' => $proofOfTransfer->id,
+                'customer_id' => $customer ? $customer->id : null,
             ]);
 
         $order->save();
