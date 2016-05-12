@@ -156,7 +156,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status, $customer);
     }
 
-    function createOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status, $customer = null)
+    private function createOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status, $customer)
     {
         if (empty($productPricingIdHash))
         {
@@ -212,7 +212,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
     function createFirstOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash)
     {
         $status = OrderStatus::FirstOrder()->id;
-        return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status);
+        return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status, null);
     }
 
     function setPaymentUploaded($order)
