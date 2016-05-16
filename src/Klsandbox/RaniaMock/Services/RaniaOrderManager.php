@@ -35,7 +35,7 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
 
         foreach ($order->orderItems as $orderItem)
         {
-            $this->assignUserToDropshipGroup($orderItem);
+            $this->membershipManager->processOrderItem($orderItem);
             if ($orderItem->productPricing->product->bonusCategory)
             {
                 $this->bonusManager->resolveBonus($orderItem);
@@ -45,15 +45,4 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
         return $return;
     }
 
-    public function assignUserToDropshipGroup(OrderItem $orderItem)
-    {
-        $dropShipMembershipProduct = Product::getDropshipMembership();
-        $dropshipGroup = Group::getDropshipGroup();
-        $order = $orderItem->order;
-        $user = User::find($order->user_id);
-
-        if($orderItem->productPricing->product->id = $dropShipMembershipProduct->id){
-            $this->membershipManager->assignGroup($dropshipGroup, $user);
-        }
-    }
 }
