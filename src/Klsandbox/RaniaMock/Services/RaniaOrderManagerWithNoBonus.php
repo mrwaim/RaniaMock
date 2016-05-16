@@ -162,6 +162,14 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status, $customer);
     }
 
+    /**
+     * @param $proofOfTransfer
+     * @param array $productPricingIdHash
+     * @param array $quantityHash
+     * @param $status
+     * @param $customer
+     * @return mixed
+     */
     private function createOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status, $customer)
     {
         if (empty($productPricingIdHash))
