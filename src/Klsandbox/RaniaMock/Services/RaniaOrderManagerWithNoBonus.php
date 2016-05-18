@@ -208,12 +208,27 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
             $productPricing = ProductPricing::find(\Crypt::decrypt($item));
 
+            if($customer){
+                if($customer->pricingArea() == 'east') {
+                    $price = $productPricing->price_east;
+                }else{
+                    $price = $productPricing->price;
+                }
+            }else{
+                $user = auth()->user();
+                if($user->pricingArea() == 'east'){
+                    $price = $productPricing->price_east;
+                }else{
+                    $price = $productPricing->price;
+                }
+            }
+
             $orderItem = new OrderItem();
             $orderItem->fill([
                 'product_pricing_id' => \Crypt::decrypt($item),
                 'order_id' => $order->id,
                 'quantity' => $quantityHash[$key],
-                'product_price' => $productPricing->product->isOtherProduct() ? $proofOfTransfer->amount : $productPricing->price,
+                'product_price' => $productPricing->product->isOtherProduct() ? $proofOfTransfer->amount : $price,
                 'index' => $index++,
             ]);
 
