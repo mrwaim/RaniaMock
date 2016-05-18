@@ -206,7 +206,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 \App::abort(500, 'invalid');
             }
 
-            $productPricing = ProductPricing::find(\Crypt::decrypt($item));
+                $productPricing = ProductPricing::find(\Crypt::decrypt($item));
 
             if($customer){
                 if($customer->pricingArea() == 'east') {

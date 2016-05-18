@@ -6,9 +6,12 @@ use App\Services\UserManager;
 use Klsandbox\BonusModel\Services\BonusManager;
 use Klsandbox\OrderModel\Models\Order;
 use App\Services\MembershipManager\MembershipManagerInterface as MembershipManager;
+use Log;
 
 class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
 {
+    protected $debug = true;
+
     /**
      * @var BonusManager $bonusManager
      */
@@ -31,10 +34,22 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
 
         foreach ($order->orderItems as $orderItem)
         {
+            if ($this->debug)
+            {
+                Log::debug('processing-order ' . $orderItem->productPricing->product->name);
+            }
+
             $this->membershipManager->processOrderItem($orderItem);
             if ($orderItem->productPricing->product->bonusCategory)
             {
                 $this->bonusManager->resolveBonus($orderItem);
+            }
+            else
+            {
+                if ($this->debug)
+                {
+                    \Log::debug("order-item no-bonus-category");
+                }
             }
         }
 
