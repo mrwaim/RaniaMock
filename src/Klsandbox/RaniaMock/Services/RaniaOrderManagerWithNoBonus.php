@@ -63,8 +63,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         $order->approved_at = $approved_at;
 
-        if (Auth::user())
-        {
+        if (Auth::user()) {
             $order->approved_by_id = Auth::user()->id;
         }
 
@@ -75,9 +74,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         if (Auth::user()) {
             User::createUserEvent($order->user, ['created_at' => $approved_at, 'controller' => 'timeline', 'route' => '/order-approved', 'target_id' => $order->id, 'parameter_id' => $approveId]);
-        }
-        else
-        {
+        } else {
             User::createUserEvent($order->user, ['created_at' => $approved_at, 'controller' => 'timeline', 'route' => '/order-auto-approved', 'target_id' => $order->id]);
         }
 
@@ -108,8 +105,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         $order->rejected_at = new Carbon();
 
-        if (Auth::user())
-        {
+        if (Auth::user()) {
             $order->rejected_by_id = Auth::user()->id;
         }
 
@@ -122,8 +118,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             Log::info("Order rejected:$order->id by:" . Auth::user()->id);
 
             User::createUserEvent($order->user, ['controller' => 'timeline', 'route' => '/order-rejected', 'target_id' => $order->id, 'parameter_id' => Auth::user()->id]);
-        }
-        else {
+        } else {
             Log::info("Order rejected:$order->id by:online");
 
             User::createUserEvent($order->user, ['controller' => 'timeline', 'route' => '/order-auto-rejected', 'target_id' => $order->id]);
@@ -146,7 +141,8 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'order-shipped', 'channel' => 'Sms', 'to_user_id' => $order->user->id]);
     }
 
-    public function orderCreated(Order $order) {
+    public function orderCreated(Order $order)
+    {
         Log::info("created\t#order:$order->id user:{$order->user->id} status:{$order->orderStatus->name} created_at:{$order->created_at}");
 
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-order', 'channel' => 'Sms', 'to_user_id' => User::admin()->id]);
@@ -172,13 +168,11 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
      */
     private function createOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status, $customer)
     {
-        if (empty($productPricingIdHash))
-        {
+        if (empty($productPricingIdHash)) {
             \App::abort(500, 'invalid');
         }
 
-        if (empty($quantityHash))
-        {
+        if (empty($quantityHash)) {
             \App::abort(500, 'invalid');
         }
 
@@ -191,37 +185,21 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 'customer_id' => $customer ? $customer->id : null,
             ]);
 
-        if ($this->date)
-        {
+        if ($this->date) {
             $order->created_at = $this->date;
         }
 
         $order->save();
 
         $index = 0;
-        foreach ($productPricingIdHash as $key => $item)
-        {
-            if (!config('order.allow_quantity') && $quantityHash[$key] != 1)
-            {
+        foreach ($productPricingIdHash as $key => $item) {
+            if (!config('order.allow_quantity') && $quantityHash[$key] != 1) {
                 \App::abort(500, 'invalid');
             }
 
-                $productPricing = ProductPricing::find(\Crypt::decrypt($item));
-
-            if($customer){
-                if($customer->pricingArea() == 'east') {
-                    $price = $productPricing->price_east;
-                }else{
-                    $price = $productPricing->price;
-                }
-            }else{
-                $user = auth()->user();
-                if($user->pricingArea() == 'east'){
-                    $price = $productPricing->price_east;
-                }else{
-                    $price = $productPricing->price;
-                }
-            }
+            $productPricing = ProductPricing::find(\Crypt::decrypt($item));
+            
+            $productPricing->getPriceAndDelivery(auth()->user(), $customer, $price, $delivery);
 
             $orderItem = new OrderItem();
             $orderItem->fill([
@@ -229,11 +207,11 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 'order_id' => $order->id,
                 'quantity' => $quantityHash[$key],
                 'product_price' => $productPricing->product->isOtherProduct() ? $proofOfTransfer->amount : $price,
+                'delivery' => $delivery,
                 'index' => $index++,
             ]);
 
-            if ($this->date)
-            {
+            if ($this->date) {
                 $orderItem->created_at = $this->date;
             }
 
