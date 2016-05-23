@@ -19,6 +19,7 @@ class RaniaBonusManager implements BonusManager
     public function getExpiry(BonusCommand $bonusCommand)
     {
         $date = $bonusCommand->orderItem->created_at;
+
         return $date->addMonth(1)->endOfMonth();
     }
 

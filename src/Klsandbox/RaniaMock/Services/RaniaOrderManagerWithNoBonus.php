@@ -47,10 +47,10 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         assert(in_array($order->order_status_id, $allowedStatus), "Invalid Order to approve $order->id - Status {$order->orderStatus->name}");
 
-        Site::protect($order, "Order");
+        Site::protect($order, 'Order');
 
         if ($order->order_status_id == OrderStatus::FirstOrder()->id) {
-            Site::protect($order->user, "User");
+            Site::protect($order->user, 'User');
 
             $this->userManager->approveNewMember($order->user);
         }
@@ -96,10 +96,10 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         assert(in_array($order->order_status_id, $allowedStatus), "Invalid Order to reject $order->id - Status {$order->orderStatus->name}");
 
-        Site::protect($order, "Order");
+        Site::protect($order, 'Order');
 
         if ($order->order_status_id == OrderStatus::FirstOrder()->id) {
-            Site::protect($order->user, "User");
+            Site::protect($order->user, 'User');
             $this->userManager->rejectNewMember($order->user);
         }
 
@@ -152,9 +152,10 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
     }
 
-    function createRestockOrder($proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $customer = null)
+    public function createRestockOrder($proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $customer = null)
     {
         $status = $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id;
+
         return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status, $customer);
     }
 
@@ -164,6 +165,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
      * @param array $quantityHash
      * @param $status
      * @param $customer
+     *
      * @return mixed
      */
     private function createOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status, $customer)
@@ -198,7 +200,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             }
 
             $productPricing = ProductPricing::find(\Crypt::decrypt($item));
-            
+
             $productPricing->getPriceAndDelivery(auth()->user(), $customer, $price, $delivery);
 
             $orderItem = new OrderItem();
@@ -221,7 +223,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         return $order;
     }
 
-    function cancelOrder(Order $order)
+    public function cancelOrder(Order $order)
     {
         $order->rejected_at = new Carbon();
         $order->rejected_by_id = Auth::user()->id;
@@ -229,13 +231,14 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $order->save();
     }
 
-    function createFirstOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash)
+    public function createFirstOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash)
     {
         $status = OrderStatus::FirstOrder()->id;
+
         return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status, null);
     }
 
-    function setPaymentUploaded($order)
+    public function setPaymentUploaded($order)
     {
         $order->order_status_id = OrderStatus::PaymentUploaded()->id;
         $order->save();
