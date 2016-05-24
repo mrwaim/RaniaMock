@@ -2,6 +2,7 @@
 
 namespace Klsandbox\RaniaMock\Services;
 
+use App\Models\Organization;
 use App\Services\UserManager;
 use Klsandbox\NotificationService\Models\NotificationRequest;
 //use Klsandbox\BonusModel\Services\BonusManager;
@@ -48,6 +49,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         assert(in_array($order->order_status_id, $allowedStatus), "Invalid Order to approve $order->id - Status {$order->orderStatus->name}");
 
         Site::protect($order, 'Order');
+        User::userProtect($order->user);
 
         if ($order->order_status_id == OrderStatus::FirstOrder()->id) {
             Site::protect($order->user, 'User');
@@ -97,6 +99,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         assert(in_array($order->order_status_id, $allowedStatus), "Invalid Order to reject $order->id - Status {$order->orderStatus->name}");
 
         Site::protect($order, 'Order');
+        User::userProtect($order->user);
 
         if ($order->order_status_id == OrderStatus::FirstOrder()->id) {
             Site::protect($order->user, 'User');
@@ -203,6 +206,8 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
             $productPricing->getPriceAndDelivery(auth()->user(), $customer, $price, $delivery);
 
+            $organizationId = $productPricing->product->is_hq ? Organization::HQ()->id : auth()->user()->organization_id;
+
             $orderItem = new OrderItem();
             $orderItem->fill([
                 'product_pricing_id' => \Crypt::decrypt($item),
@@ -211,6 +216,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 'product_price' => $productPricing->product->isOtherProduct() ? $proofOfTransfer->amount : $price,
                 'delivery' => $delivery,
                 'index' => $index++,
+                'organization_id' => $organizationId,
             ]);
 
             if ($this->date) {
