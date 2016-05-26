@@ -208,6 +208,16 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
             $organizationId = $productPricing->product->is_hq ? Organization::HQ()->id : auth()->user()->organization_id;
 
+            if (!$order->organization_id)
+            {
+                $order->organization_id = $organizationId;
+                $order->save();
+            }
+            else
+            {
+                assert($organizationId == $order->organization_id, 'organization_id');
+            }
+
             $orderItem = new OrderItem();
             $orderItem->fill([
                 'product_pricing_id' => \Crypt::decrypt($item),
