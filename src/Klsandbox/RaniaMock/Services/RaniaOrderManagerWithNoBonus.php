@@ -181,6 +181,12 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             \App::abort(500, 'invalid');
         }
 
+        $organizationId = null;
+        foreach ($productPricingIdHash as $key => $item) {
+            $productPricing = ProductPricing::find(\Crypt::decrypt($item));
+            $organizationId = $productPricing->product->is_hq ? Organization::HQ()->id : auth()->user()->organization_id;
+        }
+
         $orderModel = config('order.order_model');
         $order = new $orderModel();
         $order->fill(
@@ -188,6 +194,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 'order_status_id' => $status,
                 'proof_of_transfer_id' => $proofOfTransfer->id,
                 'customer_id' => $customer ? $customer->id : null,
+                'organization_id' => $organizationId,
             ]);
 
         if ($this->date) {
@@ -208,15 +215,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
             $organizationId = $productPricing->product->is_hq ? Organization::HQ()->id : auth()->user()->organization_id;
 
-            if (!$order->organization_id)
-            {
-                $order->organization_id = $organizationId;
-                $order->save();
-            }
-            else
-            {
-                assert($organizationId == $order->organization_id, 'organization_id');
-            }
+            assert($organizationId == $order->organization_id, 'organization_id');
 
             $orderItem = new OrderItem();
             $orderItem->fill([
