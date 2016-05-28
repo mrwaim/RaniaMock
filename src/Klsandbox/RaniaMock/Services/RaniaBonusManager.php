@@ -2,6 +2,7 @@
 
 namespace Klsandbox\RaniaMock\Services;
 
+use App\Models\BonusCategory;
 use Klsandbox\BonusModel\Models\BonusNote;
 use App\Models\User;
 use App\Models\Bonus;
@@ -36,7 +37,7 @@ class RaniaBonusManager implements BonusManager
         self::payIntroducerBonus($orderItem, $orderItem->order->user);
     }
 
-    public function resolveBonusCommandsForOrderItemUserDetails($order_item_id, Carbon $created_at, OrderItem $order, $user)
+    public function resolveBonusCommandsForOrderItemUserDetails($order_item_id, Carbon $created_at, OrderItem $order, $user, BonusCategory $orderItemBonusCategory)
     {
         return [];
     }
