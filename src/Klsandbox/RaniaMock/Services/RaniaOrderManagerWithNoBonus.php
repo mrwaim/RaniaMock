@@ -150,6 +150,11 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-order', 'channel' => 'Sms', 'to_user_id' => User::admin()->id]);
 
+        if ($order->organization_id && $order->organization_id != Organization::HQ()->id)
+        {
+            NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-order', 'channel' => 'Sms', 'to_user_id' => $order->organization->admin_id]);
+        }
+
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-downlevel-order', 'channel' => 'Sms', 'to_user_id' => $order->user->referral_id]);
 
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
@@ -184,7 +189,11 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $organizationId = null;
         foreach ($productPricingIdHash as $key => $item) {
             $productPricing = ProductPricing::find(\Crypt::decrypt($item));
-            $organizationId = $productPricing->product->is_hq ? Organization::HQ()->id : auth()->user()->organization_id;
+            assert($productPricing, \Crypt::decrypt($item));
+
+            $hq = Organization::HQ();
+            $user = auth()->user();
+            $organizationId = $productPricing->product->is_hq ? $hq->id : $user->organization_id;
         }
 
         $orderModel = config('order.order_model');
