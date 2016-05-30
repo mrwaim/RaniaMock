@@ -277,8 +277,9 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
      */
     public function getOrderList(&$filter, $user)
     {
-        $q = Order::forSite()
-            ->with('proofOfTransfer', 'user', 'customer', 'proofOfTransfer.billplzResponses', 'orderStatus');
+        $orderModel = config('order.order_model');
+
+        $q = $orderModel::with('proofOfTransfer', 'user', 'customer', 'proofOfTransfer.billplzResponses', 'orderStatus');
 
         if (preg_match('/-org$/', $filter)) {
             $q = $q
