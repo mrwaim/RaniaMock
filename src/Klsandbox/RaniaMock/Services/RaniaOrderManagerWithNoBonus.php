@@ -150,8 +150,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-order', 'channel' => 'Sms', 'to_user_id' => User::admin()->id]);
 
-        if ($order->organization_id && $order->organization_id != Organization::HQ()->id)
-        {
+        if ($order->organization_id && $order->organization_id != Organization::HQ()->id) {
             NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-order', 'channel' => 'Sms', 'to_user_id' => $order->organization->admin_id]);
         }
 
@@ -268,5 +267,69 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $order->save();
 
         Log::info("set-payment-uploaded\t#order:$order->id user:{$order->user->id} status:{$order->orderStatus->name}");
+    }
+
+
+    /**
+     * @param $filter
+     * @param $user
+     * @return array
+     */
+    public function getOrderList(&$filter, $user)
+    {
+        $q = Order::forSite()
+            ->with('proofOfTransfer', 'user', 'customer', 'proofOfTransfer.billplzResponses', 'orderStatus');
+
+        if (preg_match('/-org$/', $filter)) {
+            $q = $q
+                ->where('organization_id', $user->organization_id);
+            $filter = preg_replace('/-org$/', '', $filter);
+        }
+
+        if ($filter == 'draft') {
+            $q = $q->where('order_status_id', '=', OrderStatus::Draft()->id);
+        } else {
+            // Draft is for internal debugging only
+            $q = $q->where('order_status_id', '<>', OrderStatus::Draft()->id);
+        }
+
+        if ($user->access()->manager || $user->access()->staff) {
+            if ($filter == 'unapproved' || $filter == 'late-approvals') {
+                $q = Order::whereNotApproved($q);
+            }
+
+            if ($user->access()->manager) {
+                if ($filter == 'unfulfilled') {
+                    $q = Order::whereNotFulfilled($q);
+                }
+            }
+
+            if ($filter == 'approved') {
+                $q = Order::whereNotFulfilled($q);
+            }
+
+            if ($filter == 'shipped') {
+                $q = Order::whereFulfilled($q);
+            }
+        }
+
+        if ($filter == 'me' || $filter == 'down-line') {
+            $userIds = User::userIdsForFilter($filter);
+
+            $q = $q->whereIn('user_id', $userIds);
+            return $q;
+        } elseif ($user->access()->manager || $user->access()->staff) {
+            if ($user->access()->staff) {
+                $q = $q->where('created_at', '<=', 'DATE_SUB(CURDATE(), INTERVAL' . \Config::get('staff.canView') . ' ' . \Config::get('staff.system') . ')');
+            }
+
+            if ($filter == 'unapproved' || $filter == 'late-approvals') {
+                $q = $q->where('created_at', '<=', 'DATE_SUB(CURDATE(), INTERVAL 1 WEEK)');
+            }
+
+            return $q;
+        } else {
+            return $q;
+        }
     }
 }
