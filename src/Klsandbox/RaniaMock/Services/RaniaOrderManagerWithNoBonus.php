@@ -212,6 +212,16 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
             $hq = Organization::HQ();
             $organizationId = $productPricing->product->is_hq ? $hq->id : $user->organization_id;
+
+            $product = $productPricing->product;
+
+            // by default awarded_user_id is auth user
+            $awardedUserId = $user->id;
+
+            //if product->awarded_parent is true the set referral id as awarded
+            if ($product->award_parent) {
+                $awardedUserId = $user->referral_id;
+            }
         }
 
         $orderModel = config('order.order_model');
