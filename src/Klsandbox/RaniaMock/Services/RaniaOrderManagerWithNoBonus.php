@@ -269,10 +269,10 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         Log::info("set-payment-uploaded\t#order:$order->id user:{$order->user->id} status:{$order->orderStatus->name}");
     }
 
-
     /**
      * @param $filter
      * @param $user
+     *
      * @return array
      */
     public function getOrderList(&$filter, $user)
@@ -318,6 +318,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             $userIds = User::userIdsForFilter($filter);
 
             $q = $q->whereIn('user_id', $userIds);
+
             return $q;
         } elseif ($user->access()->manager || $user->access()->staff) {
             if ($user->access()->staff) {
