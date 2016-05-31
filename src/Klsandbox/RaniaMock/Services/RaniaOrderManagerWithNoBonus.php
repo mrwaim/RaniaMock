@@ -180,8 +180,8 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
     /**
      * @param User $user
      * @param $proofOfTransfer
-     * @param array $productPricingIdHash
-     * @param array $quantityHash
+     * @param array           $productPricingIdHash
+     * @param array           $quantityHash
      * @param $status
      * @param $customer
      *
@@ -212,16 +212,6 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
             $hq = Organization::HQ();
             $organizationId = $productPricing->product->is_hq ? $hq->id : $user->organization_id;
-
-            $product = $productPricing->product;
-
-            // by default awarded_user_id is auth user
-            $awardedUserId = $user->id;
-
-            //if product->awarded_parent is true the set referral id as awarded
-            if ($product->award_parent) {
-                $awardedUserId = $user->referral_id;
-            }
         }
 
         $orderModel = config('order.order_model');
@@ -255,8 +245,19 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
             assert($organizationId == $order->organization_id, 'organization_id');
 
+            $product = $productPricing->product;
+
+            // by default awarded_user_id is auth user
+            $awardedUserId = $user->id;
+
+            //if product->awarded_parent is true the set referral id as awarded
+            if ($product->award_parent) {
+                $awardedUserId = $user->referral_id;
+            }
+
             $orderItem = new OrderItem();
-            $orderItem->fill([
+            $orderItem->fill(
+                [
                 'product_pricing_id' => \Crypt::decrypt($item),
                 'order_id' => $order->id,
                 'quantity' => $quantityHash[$key],
@@ -264,7 +265,9 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 'delivery' => $delivery,
                 'index' => $index++,
                 'organization_id' => $organizationId,
-            ]);
+                'awarded_user_id'  => $awardedUserId,
+                ]
+            );
 
             if ($this->date) {
                 $orderItem->created_at = $this->date;
