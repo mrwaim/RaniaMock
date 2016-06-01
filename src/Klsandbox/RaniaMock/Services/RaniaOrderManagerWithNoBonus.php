@@ -3,6 +3,8 @@
 namespace Klsandbox\RaniaMock\Services;
 
 use App\Models\Organization;
+use App\Scopes\RoleBasedUserScope;
+use App\Services\ProductPricingManager\ProductPricingManagerInterface;
 use App\Services\UserManager;
 use Klsandbox\NotificationService\Models\NotificationRequest;
 //use Klsandbox\BonusModel\Services\BonusManager;
@@ -23,11 +25,17 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
      * @var UserManager $userManager
      */
     protected $userManager;
+
+    /**
+     * @var ProductPricingManagerInterface $productPricingManager
+     */
+    protected $productPricingManager;
     protected $date;
 
-    public function __construct(UserManager $userManager)
+    public function __construct(UserManager $userManager, ProductPricingManagerInterface $productPricingManager)
     {
         $this->userManager = $userManager;
+        $this->productPricingManager = $productPricingManager;
     }
 
     public function setDate($date)
@@ -146,6 +154,9 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
     public function orderCreated(Order $order)
     {
+        assert($order->user_id);
+        assert($order->user);
+
         Log::info("created\t#order:$order->id user:{$order->user->id} status:{$order->orderStatus->name} created_at:{$order->created_at}");
 
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-order', 'channel' => 'Sms', 'to_user_id' => User::admin()->id]);
@@ -159,14 +170,15 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
     }
 
-    public function createRestockOrder($proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $customer = null)
+    public function createRestockOrder(User $user, $proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $customer = null)
     {
         $status = $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id;
 
-        return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status, $customer);
+        return $this->createOrder($user, $proofOfTransfer, $productPricingIdHash, $quantityHash, $status, $customer);
     }
 
     /**
+     * @param User $user
      * @param $proofOfTransfer
      * @param array $productPricingIdHash
      * @param array $quantityHash
@@ -175,8 +187,11 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
      *
      * @return mixed
      */
-    private function createOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status, $customer)
+    private function createOrder(User $user, $proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status, $customer)
     {
+        assert($user);
+        assert($user->id);
+
         if (empty($productPricingIdHash)) {
             \App::abort(500, 'invalid');
         }
@@ -185,13 +200,17 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             \App::abort(500, 'invalid');
         }
 
+        $allowedProducts = $this->productPricingManager->getAvailableProductPricingList($user, (bool)$customer)->pluck('id')->all();
+
         $organizationId = null;
         foreach ($productPricingIdHash as $key => $item) {
-            $productPricing = ProductPricing::find(\Crypt::decrypt($item));
-            assert($productPricing, \Crypt::decrypt($item));
+            $productPricingId = \Crypt::decrypt($item);
+            $productPricing = ProductPricing::find($productPricingId);
+
+            assert(in_array($productPricingId, $allowedProducts));
+            assert($productPricing, $productPricingId);
 
             $hq = Organization::HQ();
-            $user = auth()->user();
             $organizationId = $productPricing->product->is_hq ? $hq->id : $user->organization_id;
         }
 
@@ -203,6 +222,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 'proof_of_transfer_id' => $proofOfTransfer->id,
                 'customer_id' => $customer ? $customer->id : null,
                 'organization_id' => $organizationId,
+                'user_id' => $user->id,
             ]);
 
         if ($this->date) {
@@ -219,9 +239,9 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
             $productPricing = ProductPricing::find(\Crypt::decrypt($item));
 
-            $productPricing->getPriceAndDelivery(auth()->user(), $customer, $price, $delivery);
+            $productPricing->getPriceAndDelivery($user, $customer, $price, $delivery);
 
-            $organizationId = $productPricing->product->is_hq ? Organization::HQ()->id : auth()->user()->organization_id;
+            $organizationId = $productPricing->product->is_hq ? Organization::HQ()->id : $user->organization_id;
 
             assert($organizationId == $order->organization_id, 'organization_id');
 
@@ -254,11 +274,14 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $order->save();
     }
 
-    public function createFirstOrder($proofOfTransfer, array $productPricingIdHash, array $quantityHash)
+    public function createFirstOrder(User $user, $proofOfTransfer, array $productPricingIdHash, array $quantityHash)
     {
+        assert($user, '$user');
+        assert($user->id, '$user->id');
+
         $status = OrderStatus::FirstOrder()->id;
 
-        return $this->createOrder($proofOfTransfer, $productPricingIdHash, $quantityHash, $status, null);
+        return $this->createOrder($user, $proofOfTransfer, $productPricingIdHash, $quantityHash, $status, null);
     }
 
     public function setPaymentUploaded($order)
