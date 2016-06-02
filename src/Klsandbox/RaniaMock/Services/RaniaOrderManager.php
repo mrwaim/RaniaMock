@@ -31,22 +31,25 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
 
     public function approveOrder(Order $order, $approved_at = null)
     {
-        $return = parent::approveOrder($order, $approved_at);
+        $return = null;
+        \DB::transaction(function () use ($return, $order, $approved_at) {
+            $return = parent::approveOrder($order, $approved_at);
 
-        foreach ($order->orderItems as $orderItem) {
-            if ($this->debug) {
-                Log::debug('processing-order ' . $orderItem->productPricing->product->name);
-            }
-
-            $this->membershipManager->processOrderItem($orderItem);
-            if ($orderItem->productPricing->product->bonusCategory) {
-                $this->bonusManager->resolveBonus($orderItem);
-            } else {
+            foreach ($order->orderItems as $orderItem) {
                 if ($this->debug) {
-                    \Log::debug('order-item no-bonus-category');
+                    Log::debug('processing-order ' . $orderItem->productPricing->product->name);
+                }
+
+                $this->membershipManager->processOrderItem($orderItem);
+                if ($orderItem->productPricing->product->bonusCategory) {
+                    $this->bonusManager->resolveBonus($orderItem);
+                } else {
+                    if ($this->debug) {
+                        \Log::debug('order-item no-bonus-category');
+                    }
                 }
             }
-        }
+        });
 
         return $return;
     }
