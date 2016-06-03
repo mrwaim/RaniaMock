@@ -3,7 +3,6 @@
 namespace Klsandbox\RaniaMock\Services;
 
 use App\Models\Organization;
-use App\Scopes\RoleBasedUserScope;
 use App\Services\ProductPricingManager\ProductPricingManagerInterface;
 use App\Services\UserManager;
 use Klsandbox\NotificationService\Models\NotificationRequest;
@@ -14,7 +13,6 @@ use Klsandbox\OrderModel\Models\OrderStatus;
 use App\Models\User;
 use Carbon\Carbon;
 use Auth;
-use Klsandbox\OrderModel\Models\ProductPricing;
 use Klsandbox\OrderModel\Services\OrderManager;
 use Klsandbox\SiteModel\Site;
 use Log;
@@ -207,7 +205,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             \App::abort(500, 'invalid');
         }
 
-        $allowedProducts = $this->productPricingManager->getAvailableProductPricingList($user, (bool)$customer)->pluck('id')->all();
+        $allowedProducts = $this->productPricingManager->getAvailableProductPricingList($user, (bool) $customer)->pluck('id')->all();
 
         assert(!empty($allowedProducts));
 

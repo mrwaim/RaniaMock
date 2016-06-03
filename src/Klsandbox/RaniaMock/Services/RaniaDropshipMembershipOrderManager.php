@@ -20,8 +20,7 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
 
     public function createRestockOrder(User $user, $proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $isHq, $customer = null)
     {
-        if ($this->debug)
-        {
+        if ($this->debug) {
             Log::debug('createRestockOrder - with-membership');
         }
 
@@ -29,14 +28,12 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
         if (!$user->new_referral_id && !$user->organization_id && $access->stockist && !$access->dropship) {
             foreach ($productPricingIdHash as $key => $productPricing) {
                 if ($productPricing->product->is_membership && !$productPricing->product->is_hq) {
-                    if ($this->debug)
-                    {
+                    if ($this->debug) {
                         Log::debug('  processing-membership');
                     }
 
                     if ($user->upLevel->hasDropshipAccess()) {
-                        if ($this->debug)
-                        {
+                        if ($this->debug) {
                             Log::debug('    connect-with-uplevel');
                         }
 
@@ -44,8 +41,7 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
                         $user->organization_id = $user->upLevel->organization_id;
                         $user->save();
                     } else {
-                        if ($this->debug)
-                        {
+                        if ($this->debug) {
                             Log::debug('    connecting-with-manager');
                         }
 
@@ -53,8 +49,7 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
                         $parent = $user;
                         do {
                             $parent = $parent->upLevel;
-                            if ($this->debug)
-                            {
+                            if ($this->debug) {
                                 Log::debug("parent:$parent->id");
                             }
 
@@ -63,8 +58,7 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
                             }
                         } while ($firstManager === null);
 
-                        if ($this->debug)
-                        {
+                        if ($this->debug) {
                             Log::debug('    connect-with-manager');
                         }
 
@@ -75,15 +69,12 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
                 }
             }
 
-            if ($user->new_referral_id && $user->organization_id)
-            {
+            if ($user->new_referral_id && $user->organization_id) {
                 /**
                  * @var $downLevel User
                  */
-                foreach ($user->downLevels as $downLevel)
-                {
-                    if ($downLevel->hasDropshipAccess())
-                    {
+                foreach ($user->downLevels as $downLevel) {
+                    if ($downLevel->hasDropshipAccess()) {
                         $downLevel->new_referral_id = $user->id;
                         $downLevel->organization_id = $user->organization_id;
                         $downLevel->save();
