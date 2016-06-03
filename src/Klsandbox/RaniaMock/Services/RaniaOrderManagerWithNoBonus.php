@@ -235,16 +235,12 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $order->save();
 
         $index = 0;
-        foreach ($productPricingIdHash as $key => $item) {
+        foreach ($productPricingIdHash as $key => $productPricing) {
             if (!config('order.allow_quantity') && $quantityHash[$key] != 1) {
                 \App::abort(500, 'invalid');
             }
 
-            $productPricingId = \Crypt::decrypt($item);
-
-            assert(in_array($productPricingId, $allowedProducts));
-
-            $productPricing = ProductPricing::find($productPricingId);
+            assert(in_array($productPricing->id, $allowedProducts));
 
             $productPricing->getPriceAndDelivery($user, $customer, $price, $delivery);
 
@@ -256,13 +252,6 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             $product = $productPricing->product;
 
             $quantity = $quantityHash[$key];
-
-            if (!($product->max_quantity >= $quantity)) {
-                ddd([
-                    $product->max_quantity,
-                    $quantity
-                ]);
-            }
 
             assert($product->max_quantity >= $quantity);
 
@@ -279,7 +268,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             $orderItem = new OrderItem();
             $orderItem->fill(
                 [
-                    'product_pricing_id' => \Crypt::decrypt($item),
+                    'product_pricing_id' => $productPricing->id,
                     'order_id' => $order->id,
                     'quantity' => $quantity,
                     'product_price' => $productPricing->product->isOtherProduct() ? $proofOfTransfer->amount : $price,
@@ -296,6 +285,8 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
             $orderItem->save();
         }
+
+        $this->orderCreated($order);
 
         return $order;
     }

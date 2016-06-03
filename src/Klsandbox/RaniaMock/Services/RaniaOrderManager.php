@@ -20,7 +20,7 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
     /**
      * @var MembershipManager
      */
-    private $membershipManager;
+    protected $membershipManager;
 
     public function __construct(BonusManager $bonusManager, UserManager $userManager, ProductPricingManagerInterface $productPricingManager, MembershipManager $membershipManager)
     {
