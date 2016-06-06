@@ -159,14 +159,25 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-order', 'channel' => 'Sms', 'to_user_id' => User::admin()->id]);
 
-        if ($order->organization_id && $order->organization_id != Organization::HQ()->id) {
-            NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-order', 'channel' => 'Sms', 'to_user_id' => $order->organization->admin_id]);
+        if ($order->is_hq)
+        {
+            assert($order->user->referral_id);
+            NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-downlevel-order', 'channel' => 'Sms', 'to_user_id' => $order->user->referral_id]);
         }
+        else
+        {
+            assert($order->organization_id);
+            if (!$order->user->isManager()) {
+                if ($order->organization_id != Organization::HQ()->id) {
+                    NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-order', 'channel' => 'Sms', 'to_user_id' => $order->organization->admin_id]);
+                }
 
-        $referral_id = $order->is_hq ? $order->user->referral_id : $order->user->new_referral_id;
-        assert($referral_id);
+                $referral_id = $order->user->new_referral_id;
+                assert($referral_id);
 
-        NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-downlevel-order', 'channel' => 'Sms', 'to_user_id' => $referral_id]);
+                NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-downlevel-order', 'channel' => 'Sms', 'to_user_id' => $referral_id]);
+            }
+        }
 
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
     }
@@ -205,7 +216,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             \App::abort(500, 'invalid');
         }
 
-        $allowedProducts = $this->productPricingManager->getAvailableProductPricingList($user, (bool) $customer)->pluck('id')->all();
+        $allowedProducts = $this->productPricingManager->getAvailableProductPricingList($user, (bool)$customer)->pluck('id')->all();
 
         assert(!empty($allowedProducts));
 

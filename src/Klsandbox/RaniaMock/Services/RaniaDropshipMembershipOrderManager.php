@@ -24,6 +24,9 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
             Log::debug('createRestockOrder - with-membership');
         }
 
+        $globalScopeUser = \App\Http\Middleware\GlobalScopeMiddleware::$user;
+        \App\Http\Middleware\GlobalScopeMiddleware::setScope(null);
+
         $access = $user->access();
         if (!$user->new_referral_id && !$user->organization_id && $access->stockist && !$access->dropship) {
             foreach ($productPricingIdHash as $key => $productPricing) {
@@ -42,13 +45,18 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
                         $user->save();
                     } else {
                         if ($this->debug) {
-                            Log::debug('    connecting-with-manager');
+                            Log::debug("    connecting-with-manager user:$user->id");
                         }
 
                         $firstManager = null;
                         $parent = $user;
                         do {
+                            if ($this->debug) {
+                                Log::debug("    processing:$parent->id");
+                            }
+
                             $parent = $parent->upLevel;
+                            assert($parent);
                             if ($this->debug) {
                                 Log::debug("parent:$parent->id");
                             }
@@ -82,6 +90,8 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
                 }
             }
         }
+
+        \App\Http\Middleware\GlobalScopeMiddleware::setScope($globalScopeUser);
 
         return parent::createRestockOrder($user, $proofOfTransfer, $draft, $productPricingIdHash, $quantityHash, $isHq, $customer);
     }
