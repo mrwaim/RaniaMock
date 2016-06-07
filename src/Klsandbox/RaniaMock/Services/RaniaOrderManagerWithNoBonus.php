@@ -198,7 +198,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
      * @param $status
      * @param $customer
      *
-     * @return mixed
+     * @return Order
      */
     private function createOrder(User $user, $proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status, $customer, $isHq)
     {
