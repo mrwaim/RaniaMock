@@ -13,6 +13,7 @@ use Klsandbox\OrderModel\Models\OrderStatus;
 use App\Models\User;
 use Carbon\Carbon;
 use Auth;
+use Klsandbox\OrderModel\Models\ProofOfTransfer;
 use Klsandbox\OrderModel\Services\OrderManager;
 use Klsandbox\SiteModel\Site;
 use Log;
@@ -182,7 +183,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
     }
 
-    public function createRestockOrder(User $user, $proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $isHq, $customer = null)
+    public function createRestockOrder(User $user, ProofOfTransfer $proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $isHq, $customer = null)
     {
         $status = $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id;
 
@@ -308,7 +309,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $order->save();
     }
 
-    public function createFirstOrder(User $user, $proofOfTransfer, array $productPricingIdHash, array $quantityHash, $isHq)
+    public function createFirstOrder(User $user, ProofOfTransfer $proofOfTransfer, array $productPricingIdHash, array $quantityHash, $isHq)
     {
         assert($user, '$user');
         assert($user->id, '$user->id');
