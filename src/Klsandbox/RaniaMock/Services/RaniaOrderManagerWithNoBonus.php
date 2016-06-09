@@ -56,7 +56,9 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         assert(in_array($order->order_status_id, $allowedStatus), "Invalid Order to approve $order->id - Status {$order->orderStatus->name}");
 
         Site::protect($order, 'Order');
-        User::userProtect($order->user);
+        if (Auth::user()) {
+            User::userProtect($order->user);
+        }
 
         if ($order->order_status_id == OrderStatus::FirstOrder()->id) {
             Site::protect($order->user, 'User');
