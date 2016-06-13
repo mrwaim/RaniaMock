@@ -2,6 +2,7 @@
 
 namespace Klsandbox\RaniaMock\Services;
 
+use App\Models\User;
 use App\Services\ProductPricingManager\ProductPricingManagerInterface;
 use App\Services\UserManager;
 use Klsandbox\BonusModel\Services\BonusManager;
@@ -29,18 +30,18 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
         $this->membershipManager = $membershipManager;
     }
 
-    public function approveOrder(Order $order, $approved_at = null)
+    public function approveOrder(User $user, Order $order, $approved_at = null)
     {
         $return = null;
-        \DB::transaction(function () use ($return, $order, $approved_at) {
-            $return = parent::approveOrder($order, $approved_at);
+        \DB::transaction(function () use ($return, $user, $order, $approved_at) {
+            $return = parent::approveOrder($user, $order, $approved_at);
 
             foreach ($order->orderItems as $orderItem) {
                 if ($this->debug) {
                     Log::debug('processing-order ' . $orderItem->productPricing->product->name);
                 }
 
-                $this->membershipManager->processOrderItem($orderItem);
+                $this->membershipManager->processOrderItem($user, $orderItem);
                 if ($orderItem->productPricing->product->bonusCategory) {
                     $this->bonusManager->resolveBonus($orderItem);
                 } else {

@@ -42,7 +42,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $this->date = $date;
     }
 
-    public function approveOrder(Order $order, $approved_at = null)
+    public function approveOrder(User $user, Order $order, $approved_at = null)
     {
         $allowedStatus = [
             OrderStatus::NewOrderStatus()->id,
@@ -63,7 +63,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         if ($order->order_status_id == OrderStatus::FirstOrder()->id) {
             Site::protect($order->user, 'User');
 
-            $this->userManager->approveNewMember($order->user);
+            $this->userManager->approveNewMember($user);
         }
 
         $order->orderStatus()->associate(OrderStatus::Approved());
