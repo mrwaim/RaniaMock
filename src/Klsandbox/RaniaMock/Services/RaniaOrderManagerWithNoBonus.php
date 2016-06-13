@@ -339,7 +339,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
     {
         $orderModel = config('order.order_model');
 
-        $q = $orderModel::with('proofOfTransfer', 'user', 'customer', 'proofOfTransfer.billplzResponses', 'orderStatus');
+        $q = $orderModel::with('proofOfTransfer', 'user', 'customer', 'proofOfTransfer.billplzResponses', 'orderStatus', 'orderItems', 'orderItems.productPricing', 'orderItems.productPricing.product');
 
         if (preg_match('/-org$/', $filter)) {
             $q = $q
