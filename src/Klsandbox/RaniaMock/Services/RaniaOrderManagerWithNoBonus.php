@@ -162,13 +162,10 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-order', 'channel' => 'Sms', 'to_user_id' => User::admin()->id]);
 
-        if ($order->is_hq)
-        {
+        if ($order->is_hq) {
             assert($order->user->referral_id);
             NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-downlevel-order', 'channel' => 'Sms', 'to_user_id' => $order->user->referral_id]);
-        }
-        else
-        {
+        } else {
             assert($order->organization_id);
             if (!$order->user->isManager()) {
                 if ($order->organization_id != Organization::HQ()->id) {
@@ -219,7 +216,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             \App::abort(500, 'invalid');
         }
 
-        $allowedProducts = $this->productPricingManager->getAvailableProductPricingList($user, (bool)$customer)->pluck('id')->all();
+        $allowedProducts = $this->productPricingManager->getAvailableProductPricingList($user, (bool) $customer)->pluck('id')->all();
 
         assert(!empty($allowedProducts));
 

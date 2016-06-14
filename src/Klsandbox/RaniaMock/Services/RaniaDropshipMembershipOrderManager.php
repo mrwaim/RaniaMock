@@ -35,7 +35,6 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
         }
 
         if ($hasOrganizationMembership) {
-
             $parent = $this->userManager->getNewMemberParent($user);
 
             $globalScopeUser = \App\Http\Middleware\GlobalScopeMiddleware::$user;
