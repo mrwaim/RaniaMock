@@ -34,7 +34,9 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
             }
         }
 
-        if ($hasOrganizationMembership) {
+        $access = $user->access();
+
+        if ($hasOrganizationMembership && $access->stockist && !$access->dropship) {
             $parent = $this->userManager->getNewMemberParent($user);
 
             $globalScopeUser = \App\Http\Middleware\GlobalScopeMiddleware::$user;
