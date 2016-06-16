@@ -216,7 +216,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             \App::abort(500, 'invalid');
         }
 
-        $allowedProducts = $this->productPricingManager->getAvailableProductPricingList($user, (bool) $customer)->pluck('id')->all();
+        $allowedProducts = $this->productPricingManager->getAvailableProductPricingList($user, (bool)$customer)->pluck('id')->all();
 
         assert(!empty($allowedProducts));
 
@@ -332,23 +332,34 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
      *
      * @return array
      */
-    public function getOrderList(&$filter, $user)
+    public function getOrderList(&$filter, $subfilter, $user)
     {
         $orderModel = config('order.order_model');
 
         $q = $orderModel::with('proofOfTransfer', 'user', 'customer', 'proofOfTransfer.billplzResponses', 'orderStatus', 'orderItems', 'orderItems.productPricing', 'orderItems.productPricing.product');
-
-        if (preg_match('/-org$/', $filter)) {
-            $q = $q
-                ->where('organization_id', $user->organization_id);
-            $filter = preg_replace('/-org$/', '', $filter);
-        }
 
         if ($filter == 'draft') {
             $q = $q->where('order_status_id', '=', OrderStatus::Draft()->id);
         } else {
             // Draft is for internal debugging only
             $q = $q->where('order_status_id', '<>', OrderStatus::Draft()->id);
+        }
+
+        if ($subfilter == 'hq') {
+            $q = $q
+                ->where('is_hq', '=', true)
+                ->where('organization_id', Organization::HQ()->id);
+        } elseif ($subfilter == 'org') {
+            $q = $q
+                ->where('is_hq', '=', false)
+                ->where('organization_id', $user->organization_id);
+        } elseif ($subfilter == 'pl') {
+            $q = $q
+                ->where('is_hq', '=', false)
+                ->where('organization_id', '<>', Organization::HQ()->id);
+        } elseif ($subfilter == 'hq+org') {
+            $q = $q
+                ->where('organization_id', '=', Organization::HQ()->id);
         }
 
         if ($user->access()->manager || $user->access()->staff) {
