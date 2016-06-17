@@ -151,6 +151,9 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         User::createUserEvent($order->user, ['controller' => 'timeline', 'route' => '/order-shipped', 'target_id' => $order->id, 'parameter_id' => Auth::user()->id]);
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'order-shipped', 'channel' => 'Sms', 'to_user_id' => $order->user->id]);
+        if($order->customer){
+            NotificationRequest::create(['target_id' => $order->id, 'route' => 'order-shipped', 'channel' => 'Sms', 'to_user_id' => $order->customer_id]);
+        }
     }
 
     public function orderCreated(Order $order)
