@@ -66,6 +66,8 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             $this->userManager->approveNewMember($user);
         }
 
+        $wasDraft = $order->order_status_id == OrderStatus::Draft()->id;
+
         $order->orderStatus()->associate(OrderStatus::Approved());
 
         if (!$approved_at) {
@@ -90,6 +92,11 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         }
 
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'order-approved', 'channel' => 'Sms', 'to_user_id' => $order->user->id]);
+
+        if ($wasDraft)
+        {
+            NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-online-order', 'channel' => 'Sms', 'to_user_id' => $order->proofOfTransfer->receiver_user_id]);
+        }
 
         return $order;
     }
@@ -159,6 +166,12 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         assert($order->user);
 
         Log::info("created\t#order:$order->id user:{$order->user->id} status:{$order->orderStatus->name} created_at:{$order->created_at}");
+
+        if ($order->order_status_id == OrderStatus::Draft()->id)
+        {
+            Log::info("Skip notification for draft orders");
+            return;
+        }
 
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-order', 'channel' => 'Sms', 'to_user_id' => User::admin()->id]);
 
