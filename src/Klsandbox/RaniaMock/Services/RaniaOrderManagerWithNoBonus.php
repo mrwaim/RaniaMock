@@ -93,8 +93,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         NotificationRequest::create(['target_id' => $order->id, 'route' => 'order-approved', 'channel' => 'Sms', 'to_user_id' => $order->user->id]);
 
-        if ($wasDraft)
-        {
+        if ($wasDraft) {
             NotificationRequest::create(['target_id' => $order->id, 'route' => 'new-online-order', 'channel' => 'Sms', 'to_user_id' => $order->proofOfTransfer->receiver_user_id]);
         }
 
@@ -171,8 +170,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         Log::info("created\t#order:$order->id user:{$order->user->id} status:{$order->orderStatus->name} created_at:{$order->created_at}");
 
-        if ($order->order_status_id == OrderStatus::Draft()->id)
-        {
+        if ($order->order_status_id == OrderStatus::Draft()->id) {
             Log::info("Skip notification for draft orders");
             return;
         }
@@ -355,7 +353,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         $q = $orderModel::with('proofOfTransfer', 'user', 'customer', 'proofOfTransfer.billplzResponses', 'orderStatus', 'orderItems', 'orderItems.productPricing', 'orderItems.productPricing.product');
 
-        if ($filter == 'draft') {
+        if ($filter == 'draft' || $filter == 'unpaid') {
             $q = $q->where('order_status_id', '=', OrderStatus::Draft()->id);
         } else {
             // Draft is for internal debugging only
@@ -379,24 +377,19 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 ->where('organization_id', '=', Organization::HQ()->id);
         }
 
+        if ($filter == 'unapproved' || $filter == 'late-approvals') {
+            $q = Order::whereNotApproved($q);
+        } elseif ($filter == 'unfulfilled') {
+            $q = Order::whereNotFulfilled($q);
+        } elseif ($filter == 'fulfilled') {
+            $q = Order::whereFulfilled($q);
+        } elseif ($filter == 'approved') {
+            $q = Order::whereNotFulfilled($q);
+        } elseif ($filter == 'shipped') {
+            $q = Order::whereFulfilled($q);
+        }
+
         if ($user->access()->manager || $user->access()->staff) {
-            if ($filter == 'unapproved' || $filter == 'late-approvals') {
-                $q = Order::whereNotApproved($q);
-            }
-
-            if ($user->access()->manager) {
-                if ($filter == 'unfulfilled') {
-                    $q = Order::whereNotFulfilled($q);
-                }
-            }
-
-            if ($filter == 'approved') {
-                $q = Order::whereNotFulfilled($q);
-            }
-
-            if ($filter == 'shipped') {
-                $q = Order::whereFulfilled($q);
-            }
         }
 
         if ($filter == 'me' || $filter == 'down-line') {
