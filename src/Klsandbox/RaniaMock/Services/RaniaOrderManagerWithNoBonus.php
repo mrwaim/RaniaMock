@@ -356,7 +356,6 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         if ($filter == 'draft' || $filter == 'unpaid') {
             $q = $q->where('order_status_id', '=', OrderStatus::Draft()->id);
         } else {
-            // Draft is for internal debugging only
             $q = $q->where('order_status_id', '<>', OrderStatus::Draft()->id);
         }
 
@@ -375,6 +374,9 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         } elseif ($subfilter == 'hq+org') {
             $q = $q
                 ->where('organization_id', '=', Organization::HQ()->id);
+        } elseif ($subfilter == 'me') {
+            $q = $q
+                ->where('user_id', '=', $user->id);
         }
 
         if ($filter == 'unapproved' || $filter == 'late-approvals') {
