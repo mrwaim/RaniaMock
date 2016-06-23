@@ -171,7 +171,8 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         Log::info("created\t#order:$order->id user:{$order->user->id} status:{$order->orderStatus->name} created_at:{$order->created_at}");
 
         if ($order->order_status_id == OrderStatus::Draft()->id) {
-            Log::info("Skip notification for draft orders");
+            Log::info('Skip notification for draft orders');
+
             return;
         }
 
