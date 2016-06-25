@@ -37,7 +37,7 @@ class RaniaBonusManager implements BonusManager
         self::payIntroducerBonus($orderItem, $orderItem->order->user);
     }
 
-    public function resolveBonusCommandsForOrderItemUserDetails($order_item_id, Carbon $created_at, OrderItem $order, $user, BonusCategory $orderItemBonusCategory)
+    public function resolveBonusCommandsForOrderItemUserDetails($order_item_id, Carbon $created_at, OrderItem $order, User $user, BonusCategory $orderItemBonusCategory)
     {
         return [];
     }
