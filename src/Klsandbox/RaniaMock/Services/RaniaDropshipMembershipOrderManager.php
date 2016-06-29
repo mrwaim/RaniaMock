@@ -88,11 +88,8 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
 
             if ($parent && $parent->id !== null) {
                 $user->referral_id = $parent->id;
-                $user->organization_id = $parent->organization_id;
                 $user->upLevel()->associate($parent);
 
-                $user->role_id = Role::Stockist()->id;
-                $user->role()->associate(Role::Stockist());
                 $user->save();
             }
 
