@@ -9,6 +9,7 @@ use App\Services\UserManager;
 use Klsandbox\BonusModel\Services\BonusManager;
 use App\Services\MembershipManager\MembershipManagerInterface as MembershipManager;
 use Klsandbox\OrderModel\Models\ProofOfTransfer;
+use Klsandbox\RoleModel\Role;
 use Log;
 
 class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
@@ -27,9 +28,16 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
         }
 
         $hasOrganizationMembership = false;
+        $hasHqMembership = false;
         foreach ($productPricingIdHash as $key => $productPricing) {
-            if ($productPricing->product->is_membership && !$productPricing->product->is_hq) {
-                $hasOrganizationMembership = true;
+
+            if ($productPricing->product->is_membership) {
+                if ($productPricing->product->is_hq) {
+                    $hasHqMembership = true;
+                } else {
+                    $hasOrganizationMembership = true;
+                }
+
                 break;
             }
         }
@@ -63,6 +71,29 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
                         $downLevel->save();
                     }
                 }
+            }
+
+            \App\Http\Middleware\GlobalScopeMiddleware::setScope($globalScopeUser);
+        }
+
+        if ($hasHqMembership && $access->dropship && !$access->stockist) {
+            $globalScopeUser = \App\Http\Middleware\GlobalScopeMiddleware::$user;
+            \App\Http\Middleware\GlobalScopeMiddleware::setScope(null);
+
+            if ($user->upLevelNew->hasStockistAccess()) {
+                $parent = $user->upLevelNew;
+            } else {
+                $parent = $user->organization->admin;
+            }
+
+            if ($parent && $parent->id !== null) {
+                $user->referral_id = $parent->id;
+                $user->organization_id = $parent->organization_id;
+                $user->upLevel()->associate($parent);
+
+                $user->role_id = Role::Stockist()->id;
+                $user->role()->associate(Role::Stockist());
+                $user->save();
             }
 
             \App\Http\Middleware\GlobalScopeMiddleware::setScope($globalScopeUser);
