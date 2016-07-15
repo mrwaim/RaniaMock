@@ -363,6 +363,12 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         if ($filter == 'draft' || $filter == 'unpaid') {
             $q = $q->where('order_status_id', '=', OrderStatus::Draft()->id);
+        } elseif ($filter == 'downline') {
+            $downline = $user->downline()->pluck('id')->all();
+            $q->whereIn('user_id', $downline)
+                ->orWhere(function ($query) use ($downline) {
+                    $query->whereIn('user_id', $downline);
+                });
         } else {
             $q = $q->where('order_status_id', '<>', OrderStatus::Draft()->id);
         }
