@@ -265,6 +265,13 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 \App::abort(500, 'invalid');
             }
 
+            if (env('APP_ENV') != 'production') {
+                if (!in_array($productPricing->id, $allowedProducts))
+                {
+                    ddd([$user, (bool)$customer, $productPricing, $allowedProducts]);
+                }
+            }
+
             assert(in_array($productPricing->id, $allowedProducts));
 
             $productPricing->getPriceAndDelivery($user, $customer, $price, $delivery);
