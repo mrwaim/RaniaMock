@@ -4,6 +4,7 @@ namespace Klsandbox\RaniaMock\Services;
 
 use App\Models\Organization;
 use App\Services\ProductPricingManager\ProductPricingManagerInterface;
+use App\Services\Site;
 use App\Services\UserManager;
 use Klsandbox\NotificationService\Models\NotificationRequest;
 //use Klsandbox\BonusModel\Services\BonusManager;
@@ -15,7 +16,6 @@ use Carbon\Carbon;
 use Auth;
 use Klsandbox\OrderModel\Models\ProofOfTransfer;
 use Klsandbox\OrderModel\Services\OrderManager;
-use Klsandbox\SiteModel\Site;
 use Log;
 
 class RaniaOrderManagerWithNoBonus implements OrderManager
@@ -54,7 +54,6 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         ];
 
         assert(in_array($order->order_status_id, $allowedStatus), "Invalid Order to approve $order->id - Status {$order->orderStatus->name}");
-
         Site::protect($order, 'Order');
         if (Auth::user()) {
             User::userProtect($order->user);
@@ -62,7 +61,6 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         if ($order->order_status_id == OrderStatus::FirstOrder()->id) {
             Site::protect($order->user, 'User');
-
             $this->userManager->approveNewMember($user);
         }
 
@@ -112,7 +110,6 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         ];
 
         assert(in_array($order->order_status_id, $allowedStatus), "Invalid Order to reject $order->id - Status {$order->orderStatus->name}");
-
         Site::protect($order, 'Order');
         User::userProtect($order->user);
 
