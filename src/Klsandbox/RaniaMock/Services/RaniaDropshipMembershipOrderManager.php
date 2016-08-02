@@ -21,7 +21,7 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
         parent::__construct($bonusManager, $userManager, $productPricingManager, $membershipManager);
     }
 
-    public function createRestockOrder(User $user, ProofOfTransfer $proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $isHq, $customer = null)
+    public function createRestockOrder(User $user, ProofOfTransfer $proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $isHq, $customer = null, $isPickup = false)
     {
         if ($this->debug) {
             Log::debug('createRestockOrder - with-membership');
@@ -96,6 +96,6 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
             \App\Http\Middleware\GlobalScopeMiddleware::setScope($globalScopeUser);
         }
 
-        return parent::createRestockOrder($user, $proofOfTransfer, $draft, $productPricingIdHash, $quantityHash, $isHq, $customer);
+        return parent::createRestockOrder($user, $proofOfTransfer, $draft, $productPricingIdHash, $quantityHash, $isHq, $customer, $isPickup);
     }
 }
