@@ -195,11 +195,11 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
     }
 
-    public function createRestockOrder(User $user, ProofOfTransfer $proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $isHq, $customer = null)
+    public function createRestockOrder(User $user, ProofOfTransfer $proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $isHq, $customer = null, $isPickup = false)
     {
         $status = $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id;
 
-        return $this->createOrder($user, $proofOfTransfer, $productPricingIdHash, $quantityHash, $status, $customer, $isHq);
+        return $this->createOrder($user, $proofOfTransfer, $productPricingIdHash, $quantityHash, $status, $customer, $isHq, $isPickup);
     }
 
     /**
@@ -209,10 +209,11 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
      * @param array $quantityHash
      * @param $status
      * @param $customer
-     *
+     * @param $isHq
+     * @param bool $isPickup
      * @return Order
      */
-    private function createOrder(User $user, $proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status, $customer, $isHq)
+    private function createOrder(User $user, $proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status, $customer, $isHq, $isPickup = false)
     {
         assert($user);
         assert($user->id);
@@ -248,6 +249,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 'organization_id' => $organizationId,
                 'user_id' => $user->id,
                 'is_hq' => $isHq,
+                'is_pickup' => $isPickup
             ]);
 
         if ($this->date) {
@@ -328,7 +330,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $order->save();
     }
 
-    public function createFirstOrder(User $user, ProofOfTransfer $proofOfTransfer, array $productPricingIdHash, array $quantityHash, $isHq)
+    public function createFirstOrder(User $user, ProofOfTransfer $proofOfTransfer, array $productPricingIdHash, array $quantityHash, $isHq, $isPickup = false)
     {
         assert($user, '$user');
         assert($user->id, '$user->id');
