@@ -3,11 +3,10 @@
 namespace Klsandbox\RaniaMock\Services;
 
 use App\Models\Organization;
-use App\Services\ProductPricingManager\ProductPricingManagerInterface;
+use App\Services\ProductManager\ProductManagerInterface;
 use App\Services\Site;
 use App\Services\UserManager;
 use Klsandbox\NotificationService\Models\NotificationRequest;
-//use Klsandbox\BonusModel\Services\BonusManager;
 use Klsandbox\OrderModel\Models\Order;
 use Klsandbox\OrderModel\Models\OrderItem;
 use Klsandbox\OrderModel\Models\OrderStatus;
@@ -26,15 +25,15 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
     protected $userManager;
 
     /**
-     * @var ProductPricingManagerInterface $productPricingManager
+     * @var ProductManagerInterface $productManager
      */
-    protected $productPricingManager;
+    protected $productManager;
     protected $date;
 
-    public function __construct(UserManager $userManager, ProductPricingManagerInterface $productPricingManager)
+    public function __construct(UserManager $userManager, ProductManagerInterface $productManager)
     {
         $this->userManager = $userManager;
-        $this->productPricingManager = $productPricingManager;
+        $this->productManager = $productManager;
     }
 
     public function setDate($date)
@@ -195,17 +194,18 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
     }
 
-    public function createRestockOrder(User $user, ProofOfTransfer $proofOfTransfer, $draft, array $productPricingIdHash, array $quantityHash, $isHq, $customer = null, $isPickup = false)
+
+    public function createRestockOrder(User $user, ProofOfTransfer $proofOfTransfer, $draft, array $products, array $quantityHash, $isHq, $customer = null, $isPickup = false)
     {
         $status = $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id;
 
-        return $this->createOrder($user, $proofOfTransfer, $productPricingIdHash, $quantityHash, $status, $customer, $isHq, $isPickup);
+        return $this->createOrder($user, $proofOfTransfer, $products, $quantityHash, $status, $customer, $isHq, $isPickup);
     }
 
     /**
      * @param User $user
      * @param $proofOfTransfer
-     * @param array $productPricingIdHash
+     * @param array $products
      * @param array $quantityHash
      * @param $status
      * @param $customer
@@ -213,7 +213,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
      * @param bool $isPickup
      * @return Order
      */
-    private function createOrder(User $user, $proofOfTransfer, array $productPricingIdHash, array $quantityHash, $status, $customer, $isHq, $isPickup = false)
+    private function createOrder(User $user, $proofOfTransfer, array $products, array $quantityHash, $status, $customer, $isHq, $isPickup = false)
     {
         assert($user);
         assert($user->id);
@@ -222,7 +222,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             assert($customer->referral_id == $user->id);
         }
 
-        if (empty($productPricingIdHash)) {
+        if (empty($products)) {
             \App::abort(500, 'invalid');
         }
 
@@ -230,7 +230,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             \App::abort(500, 'invalid');
         }
 
-        $allowedProducts = $this->productPricingManager->getAvailableProductPricingList($user, (bool)$customer)->pluck('id')->all();
+        $allowedProducts = $this->productManager->getAvailableProductPricingList($user, (bool)$customer)->pluck('id')->all();
 
         assert(!empty($allowedProducts));
 
@@ -259,28 +259,26 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $order->save();
 
         $index = 0;
-        foreach ($productPricingIdHash as $key => $productPricing) {
+        foreach ($products as $key => $product) {
             if (!config('order.allow_quantity') && $quantityHash[$key] != 1) {
                 \App::abort(500, 'invalid');
             }
 
             if (env('APP_ENV') != 'production') {
-                if (!in_array($productPricing->id, $allowedProducts))
+                if (!in_array($product->id, $allowedProducts))
                 {
-                    ddd([$user, (bool)$customer, $productPricing, $allowedProducts]);
+                    ddd([$user, (bool)$customer, $product, $allowedProducts]);
                 }
             }
 
-            assert(in_array($productPricing->id, $allowedProducts));
+            assert(in_array($product->id, $allowedProducts));
 
-            $productPricing->getPriceAndDelivery($user, $customer, $price, $delivery);
+            $product->getPriceAndDelivery($user, $customer, $price, $delivery);
 
-            $organizationId = $productPricing->product->is_hq ? $hq->id : $user->organization_id;
+            $organizationId = $product->is_hq ? $hq->id : $user->organization_id;
 
             assert($organizationId == $order->organization_id, 'organization_id');
-            assert($isHq == $productPricing->product->is_hq, 'is_hq');
-
-            $product = $productPricing->product;
+            assert($isHq == $product->is_hq, 'is_hq');
 
             $quantity = $quantityHash[$key];
 
@@ -299,10 +297,10 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             $orderItem = new OrderItem();
             $orderItem->fill(
                 [
-                    'product_pricing_id' => $productPricing->id,
+                    'product_id' => $product->id,
                     'order_id' => $order->id,
                     'quantity' => $quantity,
-                    'product_price' => $productPricing->product->isOtherProduct() ? $proofOfTransfer->amount : $price,
+                    'product_price' => $product->isOtherProduct() ? $proofOfTransfer->amount : $price,
                     'delivery' => $delivery,
                     'index' => $index++,
                     'organization_id' => $organizationId,
@@ -330,14 +328,14 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $order->save();
     }
 
-    public function createFirstOrder(User $user, ProofOfTransfer $proofOfTransfer, array $productPricingIdHash, array $quantityHash, $isHq, $isPickup = false)
+    public function createFirstOrder(User $user, ProofOfTransfer $proofOfTransfer, array $products, array $quantityHash, $isHq, $isPickup = false)
     {
         assert($user, '$user');
         assert($user->id, '$user->id');
 
         $status = OrderStatus::FirstOrder()->id;
 
-        return $this->createOrder($user, $proofOfTransfer, $productPricingIdHash, $quantityHash, $status, null, $isHq);
+        return $this->createOrder($user, $proofOfTransfer, $products, $quantityHash, $status, null, $isHq);
     }
 
     public function setPaymentUploaded($order)
@@ -358,7 +356,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
     {
         $orderModel = config('order.order_model');
 
-        $q = $orderModel::with('proofOfTransfer', 'user', 'customer', 'proofOfTransfer.billplzResponses', 'orderStatus', 'orderItems', 'orderItems.productPricing', 'orderItems.productPricing.product');
+        $q = $orderModel::with('proofOfTransfer', 'user', 'customer', 'proofOfTransfer.billplzResponses', 'orderStatus', 'orderItems', 'orderItems.product');
 
         if ($filter == 'draft' || $filter == 'unpaid') {
             $q = $q->where('order_status_id', '=', OrderStatus::Draft()->id);
