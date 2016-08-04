@@ -38,11 +38,11 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
 
             foreach ($order->orderItems as $orderItem) {
                 if ($this->debug) {
-                    Log::debug('processing-order ' . $orderItem->productPricing->product->name);
+                    Log::debug('processing-order ' . $orderItem->product->name);
                 }
 
                 $this->membershipManager->processOrderItem($user, $orderItem);
-                if ($orderItem->productPricing->product->bonusCategory) {
+                if ($orderItem->product->bonusCategory) {
                     $this->bonusManager->resolveBonus($orderItem);
                 } else {
                     if ($this->debug) {
