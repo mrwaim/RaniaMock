@@ -3,11 +3,10 @@
 namespace Klsandbox\RaniaMock\Services;
 
 use App\Models\Organization;
-use App\Services\ProductPricingManager\ProductPricingManagerInterface;
+use App\Services\ProductManager\ProductManagerInterface;
 use App\Services\Site;
 use App\Services\UserManager;
 use Klsandbox\NotificationService\Models\NotificationRequest;
-//use Klsandbox\BonusModel\Services\BonusManager;
 use Klsandbox\OrderModel\Models\Order;
 use Klsandbox\OrderModel\Models\OrderItem;
 use Klsandbox\OrderModel\Models\OrderStatus;
@@ -26,15 +25,15 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
     protected $userManager;
 
     /**
-     * @var ProductPricingManagerInterface $productPricingManager
+     * @var ProductManagerInterface $productManager
      */
-    protected $productPricingManager;
+    protected $productManager;
     protected $date;
 
-    public function __construct(UserManager $userManager, ProductPricingManagerInterface $productPricingManager)
+    public function __construct(UserManager $userManager, ProductManagerInterface $productManager)
     {
         $this->userManager = $userManager;
-        $this->productPricingManager = $productPricingManager;
+        $this->productManager = $productManager;
     }
 
     public function setDate($date)
@@ -231,7 +230,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             \App::abort(500, 'invalid');
         }
 
-        $allowedProducts = $this->productPricingManager->getAvailableProductPricingList($user, (bool)$customer)->pluck('id')->all();
+        $allowedProducts = $this->productManager->getAvailableProductPricingList($user, (bool)$customer)->pluck('id')->all();
 
         assert(!empty($allowedProducts));
 

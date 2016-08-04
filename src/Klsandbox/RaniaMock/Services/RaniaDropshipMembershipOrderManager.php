@@ -2,23 +2,21 @@
 
 namespace Klsandbox\RaniaMock\Services;
 
-use App\Models\Organization;
 use App\Models\User;
-use App\Services\ProductPricingManager\ProductPricingManagerInterface;
+use App\Services\ProductManager\ProductManagerInterface;
 use App\Services\UserManager;
 use Klsandbox\BonusModel\Services\BonusManager;
 use App\Services\MembershipManager\MembershipManagerInterface as MembershipManager;
 use Klsandbox\OrderModel\Models\ProofOfTransfer;
-use Klsandbox\RoleModel\Role;
 use Log;
 
 class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
 {
     protected $debug = true;
 
-    public function __construct(BonusManager $bonusManager, UserManager $userManager, ProductPricingManagerInterface $productPricingManager, MembershipManager $membershipManager)
+    public function __construct(BonusManager $bonusManager, UserManager $userManager, ProductManagerInterface $productManager, MembershipManager $membershipManager)
     {
-        parent::__construct($bonusManager, $userManager, $productPricingManager, $membershipManager);
+        parent::__construct($bonusManager, $userManager, $productManager, $membershipManager);
     }
 
     public function createRestockOrder(User $user, ProofOfTransfer $proofOfTransfer, $draft, array $products, array $quantityHash, $isHq, $customer = null, $isPickup = false)

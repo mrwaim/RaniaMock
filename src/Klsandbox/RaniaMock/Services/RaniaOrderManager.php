@@ -3,7 +3,7 @@
 namespace Klsandbox\RaniaMock\Services;
 
 use App\Models\User;
-use App\Services\ProductPricingManager\ProductPricingManagerInterface;
+use App\Services\ProductManager\ProductManagerInterface;
 use App\Services\UserManager;
 use Klsandbox\BonusModel\Services\BonusManager;
 use Klsandbox\OrderModel\Models\Order;
@@ -23,9 +23,9 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
      */
     protected $membershipManager;
 
-    public function __construct(BonusManager $bonusManager, UserManager $userManager, ProductPricingManagerInterface $productPricingManager, MembershipManager $membershipManager)
+    public function __construct(BonusManager $bonusManager, UserManager $userManager, ProductManagerInterface $productManager, MembershipManager $membershipManager)
     {
-        parent::__construct($userManager, $productPricingManager);
+        parent::__construct($userManager, $productManager);
         $this->bonusManager = $bonusManager;
         $this->membershipManager = $membershipManager;
     }
