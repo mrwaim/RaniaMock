@@ -249,8 +249,9 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 'organization_id' => $organizationId,
                 'user_id' => $user->id,
                 'is_hq' => $isHq,
-                'is_pickup' => $isPickup
-            ]);
+               'is_pickup' => $isPickup,
+                'created_by_id' => $this->userManager->getRealUserId()
+           ]);
 
         if ($this->date) {
             $order->created_at = $this->date;
