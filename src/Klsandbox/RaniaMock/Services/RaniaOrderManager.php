@@ -3,11 +3,12 @@
 namespace Klsandbox\RaniaMock\Services;
 
 use App\Models\User;
-use App\Services\ProductManager\ProductManagerInterface;
+use App\Services\OrderItemsUnitManager;
 use App\Services\UserManager;
 use Klsandbox\BonusModel\Services\BonusManager;
 use Klsandbox\OrderModel\Models\Order;
 use App\Services\MembershipManager\MembershipManagerInterface as MembershipManager;
+use App\Services\ProductManager\ProductManagerInterface;
 use Log;
 
 class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
@@ -49,6 +50,9 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
                         \Log::debug('order-item no-bonus-category');
                     }
                 }
+
+                //record order quantity
+                OrderItemsUnitManager::create($orderItem);
             }
         });
 
