@@ -38,6 +38,8 @@ class RaniaOrderManager extends  RaniaOrderManagerWithNoBonus
             $return = parent::approveOrder($user, $order, $approved_at);
 
             foreach ($order->orderItems as $orderItem) {
+                assert($orderItem->product);
+
                 if ($this->debug) {
                     Log::debug('processing-order ' . $orderItem->product->name);
                 }
