@@ -197,7 +197,11 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
     public function createRestockOrder(User $user, ProofOfTransfer $proofOfTransfer, $draft, array $products, array $quantityHash, $isHq, $customer = null, $isPickup = false)
     {
-        $status = $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id;
+        $status = $draft;
+
+        if (is_bool($draft)) {
+            $status = $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id;
+        }
 
         return $this->createOrder($user, $proofOfTransfer, $products, $quantityHash, $status, $customer, $isHq, $isPickup);
     }
