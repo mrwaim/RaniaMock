@@ -28,7 +28,6 @@ class RaniaDropshipMembershipOrderManager extends RaniaOrderManager
         $hasOrganizationMembership = false;
         $hasHqMembership = false;
         foreach ($products as $key => $product) {
-
             if ($product->is_membership) {
                 if ($product->is_hq) {
                     $hasHqMembership = true;

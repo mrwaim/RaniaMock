@@ -194,7 +194,6 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
     }
 
-
     public function createRestockOrder(User $user, ProofOfTransfer $proofOfTransfer, $draft, array $products, array $quantityHash, $isHq, $customer = null, $isPickup = false)
     {
         $status = $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id;
@@ -250,7 +249,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 'user_id' => $user->id,
                 'is_hq' => $isHq,
                'is_pickup' => $isPickup,
-                'created_by_id' => $this->userManager->getRealUserId()
+                'created_by_id' => $this->userManager->getRealUserId(),
            ]);
 
         if ($this->date) {
@@ -266,8 +265,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             }
 
             if (env('APP_ENV') != 'production') {
-                if (!in_array($product->id, $allowedProducts))
-                {
+                if (!in_array($product->id, $allowedProducts)) {
                     ddd([$user, (bool)$customer, $product, $allowedProducts]);
                 }
             }
