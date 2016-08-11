@@ -194,11 +194,11 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         User::createUserEvent($order->user, ['created_at' => $order->created_at, 'controller' => 'timeline', 'route' => '/new-order', 'target_id' => $order->id]);
     }
 
-    public function createRestockOrder(User $user, ProofOfTransfer $proofOfTransfer, $draft, array $products, array $quantityHash, $isHq, $customer = null, $isPickup = false)
+    public function createRestockOrder(User $user, ProofOfTransfer $proofOfTransfer, $draft, array $products, array $quantityHash, $isHq, $customer = null, $isPickup = false, $ipAddress)
     {
         $status = $draft ? OrderStatus::Draft()->id : OrderStatus::PaymentUploaded()->id;
 
-        return $this->createOrder($user, $proofOfTransfer, $products, $quantityHash, $status, $customer, $isHq, $isPickup);
+        return $this->createOrder($user, $proofOfTransfer, $products, $quantityHash, $status, $customer, $isHq, $isPickup, $ipAddress);
     }
 
     /**
@@ -210,9 +210,10 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
      * @param $customer
      * @param $isHq
      * @param bool $isPickup
+     * @param $ipAddress
      * @return Order
      */
-    private function createOrder(User $user, $proofOfTransfer, array $products, array $quantityHash, $status, $customer, $isHq, $isPickup = false)
+    private function createOrder(User $user, $proofOfTransfer, array $products, array $quantityHash, $status, $customer, $isHq, $isPickup = false, $ipAddress)
     {
         assert($user);
         assert($user->id);
@@ -248,9 +249,10 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
                 'organization_id' => $organizationId,
                 'user_id' => $user->id,
                 'is_hq' => $isHq,
-               'is_pickup' => $isPickup,
+                'is_pickup' => $isPickup,
                 'created_by_id' => $this->userManager->getRealUserId(),
-           ]);
+                'ip_address' => $ipAddress,
+            ]);
 
         if ($this->date) {
             $order->created_at = $this->date;
@@ -327,14 +329,14 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         $order->save();
     }
 
-    public function createFirstOrder(User $user, ProofOfTransfer $proofOfTransfer, array $products, array $quantityHash, $isHq, $isPickup = false)
+    public function createFirstOrder(User $user, ProofOfTransfer $proofOfTransfer, array $products, array $quantityHash, $isHq, $isPickup = false, $ipAddress)
     {
         assert($user, '$user');
         assert($user->id, '$user->id');
 
         $status = OrderStatus::FirstOrder()->id;
 
-        return $this->createOrder($user, $proofOfTransfer, $products, $quantityHash, $status, null, $isHq);
+        return $this->createOrder($user, $proofOfTransfer, $products, $quantityHash, $status, null, $isHq, $ipAddress);
     }
 
     public function setPaymentUploaded($order)
