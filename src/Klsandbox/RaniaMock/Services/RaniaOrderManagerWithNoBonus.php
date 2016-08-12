@@ -230,7 +230,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
             \App::abort(500, 'invalid');
         }
 
-        $allowedProducts = $this->productManager->getAvailableProductPricingList($user, (bool)$customer)->pluck('id')->all();
+        $allowedProducts = $this->productManager->getAvailableProductList($user, (bool)$customer)->pluck('id')->all();
 
         assert(!empty($allowedProducts));
 
