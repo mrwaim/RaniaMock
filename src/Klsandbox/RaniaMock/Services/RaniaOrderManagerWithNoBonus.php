@@ -336,7 +336,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
 
         $status = OrderStatus::FirstOrder()->id;
 
-        return $this->createOrder($user, $proofOfTransfer, $products, $quantityHash, $status, null, $isHq, $ipAddress);
+        return $this->createOrder($user, $proofOfTransfer, $products, $quantityHash, $status, null, $isHq, $isPickup, $ipAddress);
     }
 
     public function setPaymentUploaded($order)
