@@ -394,7 +394,7 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
         } elseif ($filter == 'approved') {
             $q = Order::whereNotFulfilled($q);
         } elseif ($filter == 'shipped') {
-            $q = Order::whereFulfilled($q);
+            $q = Order::whereShipped($q);
         }
 
         if ($user->access()->manager || $user->access()->staff) {
