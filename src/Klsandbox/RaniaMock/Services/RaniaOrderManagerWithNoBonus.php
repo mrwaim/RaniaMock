@@ -2,6 +2,7 @@
 
 namespace Klsandbox\RaniaMock\Services;
 
+use Alexandro\Notifications\SlackNotification;
 use App\Models\Organization;
 use App\Services\ProductManager\ProductManagerInterface;
 use App\Services\Site;
@@ -163,6 +164,9 @@ class RaniaOrderManagerWithNoBonus implements OrderManager
     {
         assert($order->user_id);
         assert($order->user);
+
+        $slackNotification = new SlackNotification();
+        $slackNotification->order($order);
 
         Log::info("created\t#order:$order->id user:{$order->user->id} status:{$order->orderStatus->name} created_at:{$order->created_at}");
 
